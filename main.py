@@ -1,4 +1,6 @@
 import networkx as nx
+import matplotlib as plt
+import numpy as np
 
 class interaction:
     def __init__(self):
@@ -56,11 +58,29 @@ def parse_csv(input_file_name: str, host_to_set_of_viruses: dict, virus_to_set_o
     # print("debug here to inspect data structures")
     return 0 # success! 
 
+def RandomWalk(viruses_to_hosts_DAG: nx.DiGraph):
+    virusHostMat = nx.to_numpy_array(viruses_to_hosts_DAG)
+    rowSize = virusHostMat.size / 2
+    columnSize = rowSize
+    dMat = np.zeros(virusHostMat.shape)
+    for i in range(rowSize):
+        rowSum = 0
+        for j in range(columnSize):
+            if i != j: 
+                rowSum += virusHostMat[i][j]
+        dMat[i][i] = rowSum
+    dInv = np.linalg.inv(dMat)
+    #matrix inverse
+
+
+
+
 def main():
     host_to_set_of_viruses = {}
     virus_to_set_of_hosts = {}
     viruses_to_hosts_DAG = nx.DiGraph()
     parse_csv("Virion.csv", host_to_set_of_viruses, virus_to_set_of_hosts, viruses_to_hosts_DAG)
+
 
 if __name__ == "__main__":
     main()
