@@ -26,12 +26,43 @@ def create_sets(G: nx.Graph, fraction: float):
     for testing_edge in testing_edges:
         assert(testing_edge not in training_edges)
 
+    # create one negative edges for every positive edge in the training set
+    # negative edges are created by:
+    #  1. selecting 2 random nodes
+    #  2. ensuring there is no existing edge between them (select new nodes if there is an edge)
+    #  3. if not, add the edge to the testing set
+    for i in range(len(testing_edges)):
+        while(True):
+            # G.nodes
+            random_node_1 = random.choice(list(G))
+            random_node_2 = random.choice(list(G))
+            if (random_node_1 == random_node_2): continue # same node picked twice
+            if (G.has_edge(random_node_1, random_node_2) or G.has_edge(random_node_2, random_node_1)): continue # edge already exists
+            else: testing_edges.append((random_node_1, random_node_2))
+            break
     
     return (training_edges, testing_edges)
 
-# what are the next steps? now consider running some operation on the testing edges
-    # what would it require to do that properly? 
-    # in the project description it says that we can just run the algorithm on the testing edges
+
+
+def run_algorithm_on_testing_data(testing_set: list):
+    print("running algorithm and graphing results")
+
+    # here, I will:
+    # 1. run some link prediction algorithm on the testing data
+    # 2. rank the results by the score produced
+    # 3. generate precision-recall curve and ROC curve
+    # 4. find the area under both curves
+    # 5. create a box and whisker plot of the results you get from running the above steps 10 times
+    
+    # while I wait for our group to finish the LF-SVD prediction, i need to complete steps 2-5
+    # in order to do that, I need to think of some 'placeholder' procedure I can use to simulate step 1 so that
+    # I can get steps 2-5 working.
+
+    # TODO: ask group exactly the LF-SVD will output, that way I can model some hard-coded thing that
+    # approximates its output temporarily so that I can build steps 2-5 while other group
+    # members finish step 1. This way, the group can just paste the LF-SVD results over my hard-coded
+    # placeholder, and we will be done with the assignment
 
 
 if __name__ == "__main__":
