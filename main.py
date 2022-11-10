@@ -62,14 +62,26 @@ def RandomWalk(viruses_to_hosts_DAG: nx.DiGraph):
     virusHostMat = nx.to_numpy_array(viruses_to_hosts_DAG)
     rowSize = virusHostMat.size / 2
     columnSize = rowSize
-    dMat = np.zeros(virusHostMat.shape)
-    for i in range(rowSize):
-        rowSum = 0
-        for j in range(columnSize):
-            if i != j: 
-                rowSum += virusHostMat[i][j]
-        dMat[i][i] = rowSum
-    dInv = np.linalg.inv(dMat)
+    probMatrix = np.zeros(virusHostMat.shape)
+    probArray = np.sum(virusHostMat, axis=1) #calculates degree of node i
+    for row in range(rowSize):
+        for col in range(columnSize):
+            if virusHostMat[row][col] != 0:
+                probMatrix[row][col] = 1 / probArray[row]
+    c = 0.9
+    cPrime = 0.1
+    cProbTransMatrix = c * probMatrix.transpose()
+    idenMatrix = np.identity(rowSize)
+    invMatrix = np.invert(idenMatrix - cProbTransMatrix)
+    qMatrix = cPrime * invMatrix
+    #dMat = np.zeros(virusHostMat.shape)
+    #for i in range(rowSize):
+        #rowSum = 0
+        #for j in range(columnSize):
+            #if i != j: 
+                #rowSum += virusHostMat[i][j]
+        #dMat[i][i] = rowSum
+    #dInv = np.linalg.inv(dMat)
     #matrix inverse
 
 
