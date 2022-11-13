@@ -3,25 +3,28 @@ import random
 import matplotlib.pyplot as plt
 import numpy as np
 
-def main():
-    G = nx.karate_club_graph()
+# validation steps:
+    # 0. for a given graph, split the graph into set of training data and testing data
+    # 1. run link prediction algorithm on the testing data
+    # 2. rank the results by the score produced
+    # 3. generate precision-recall curve and ROC curve
+    # 4. find the area under both curves
+    # 5. create a box and whisker plot of the results you get from running the above steps 10 times
 
+def main():
     ten_auroc_values = list()
     ten_auprc_values = list()
     
     for i in range(10):
-        # start of main for loop that should run 10 times
+        G = nx.karate_club_graph()
         edge_sets = create_sets(G, 0.1)
 
         # generate a sample output from LF-SVD run on the testing set of edges from the graph
-        training_set_size = len(edge_sets[1])
-        lfsvd_sample_output = np.zeros((training_set_size, training_set_size)) # empty nxn matrix
-        for i in range(training_set_size):
-            for j in range(training_set_size):
-                lfsvd_sample_output[i][j] = round(random.uniform(0.0, 2.0), 2)
+        # note, the below method is implemented in a placeholder fashion
+        lfsvd_sample_output = get_lfsvd_output(edge_sets[0], edge_sets[1])
         
-        # calculate auroc and auprc value
-            # instead of doing the real calculation, I will:
+        # calculate auroc and auprc value given lfsvd_output
+            # instead of doing the real calculation, as a placeholder I will:
                 # find the average value of the matrix and use that as a placeholder for auroc
                 # find the max value of the matrix and use that as a placeholder for auroc 
         auroc_and_auprc = calculate_auroc_and_auprc(lfsvd_sample_output)
@@ -35,6 +38,18 @@ def calculate_auroc_and_auprc(lfsvd_output_matrix):
     placeholder_auroc = 0
     placeholder_auprc = 0    
     output_values = lfsvd_output_matrix.tolist()
+
+    # create a flattened list of all matrix values
+    # also, create a dictionary of the coordinates of every element in the original output matrix. these coordinates will be checked when calculating AUROC and AUPRC
+    # also, create a descending order version of the flattened list. this is used for AUROC and AUPRC calculation
+    coordinates_dict = dict()
+    flattened_list = list()
+    descending_flattened_list = list()
+    for row_list in output_values:
+        for elem in row_list:
+            flattened_list.append(elem)
+            coordinates_dict[elem] = (row_list, row_list.index(elem))
+    descending_flattened_list = flattened_list.sort(reverse=True)
 
     # placeholder_auroc_calculation (sum)
     for row_list in output_values:
@@ -89,21 +104,14 @@ def create_sets(G: nx.Graph, fraction: float):
     
     return (training_edges, testing_edges)
 
-    # here, I will:
-    # 1. run some link prediction algorithm on the testing data
-    # 2. rank the results by the score produced
-    # 3. generate precision-recall curve and ROC curve
-    # 4. find the area under both curves
-    # 5. create a box and whisker plot of the results you get from running the above steps 10 times
-    
-    # while I wait for our group to finish the LF-SVD prediction, i need to complete steps 2-5
-    # in order to do that, I need to think of some 'placeholder' procedure I can use to simulate step 1 so that
-    # I can get steps 2-5 working.
-
-    # TODO: ask group exactly the LF-SVD will output, that way I can model some hard-coded thing that
-    # approximates its output temporarily so that I can build steps 2-5 while other group
-    # members finish step 1. This way, the group can just paste the LF-SVD results over my hard-coded
-    # placeholder, and we will be done with the assignment
+# this is a placeholder method for obtaining the output from running lfsvd. I've just generated a random score from 0 to 2 for every edge between nodes i and j in the training set
+def get_lfsvd_output(training_set: list, testing_set: list):
+        training_set_size = len(testing_set)
+        lfsvd_sample_output = np.zeros((training_set_size, training_set_size)) # empty nxn matrix
+        for i in range(training_set_size):
+            for j in range(training_set_size):
+                lfsvd_sample_output[i][j] = round(random.uniform(0.0, 2.0), 2)
+        return lfsvd_sample_output
 
 def plot_values(auroc_values: list, auprc_values: list):
     print("graphing results")
