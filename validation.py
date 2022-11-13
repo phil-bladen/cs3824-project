@@ -5,19 +5,62 @@ import numpy as np
 
 def main():
     G = nx.karate_club_graph()
-    create_sets(G, 0.1)
 
-    # plot data
-    random_auroc = list()
-    for i in range(20):
-        random_auroc.append(random.randint(0, 100))
+    ten_auroc_values = list()
+    ten_auprc_values = list()
+    
+    for i in range(10):
+        # start of main for loop that should run 10 times
+        edge_sets = create_sets(G, 0.1)
 
-    random_auprc = list()
-    for i in range(20):
-        random_auprc.append(random.randint(0, 100))
+        # generate a sample output from LF-SVD run on the testing set of edges from the graph
+        training_set_size = len(edge_sets[1])
+        lfsvd_sample_output = np.zeros((training_set_size, training_set_size)) # empty nxn matrix
+        for i in range(training_set_size):
+            for j in range(training_set_size):
+                lfsvd_sample_output[i][j] = round(random.uniform(0.0, 2.0), 2)
+        
+        # calculate auroc and auprc value
+            # instead of doing the real calculation, I will:
+                # find the average value of the matrix and use that as a placeholder for auroc
+                # find the max value of the matrix and use that as a placeholder for auroc 
+        auroc_and_auprc = calculate_auroc_and_auprc(lfsvd_sample_output)
+        ten_auroc_values.append(auroc_and_auprc[0])
+        ten_auprc_values.append(auroc_and_auprc[1])
+    # end of main for loop that should run 10 times
 
-    plot_values(random_auroc, random_auprc)
-    return 0
+    plot_values(ten_auroc_values, ten_auprc_values)
+
+    # plot data using placeholder auroc and 
+    # random_auroc = list()
+    # for i in range(20):
+    #         random_auroc.append(random.randint(0, 100))
+    # random_auprc = list()
+    # for i in range(20):
+    #         random_auprc.append(random.randint(0, 100))
+
+    # plot_values(random_auroc, random_auprc)
+    # return 0
+
+def calculate_auroc_and_auprc(lfsvd_output_matrix):
+    placeholder_auroc = 0
+    placeholder_auprc = 0    
+    output_values = lfsvd_output_matrix.tolist()
+
+    # placeholder_auroc_calculation (sum)
+    for row_list in output_values:
+        for elem in row_list:
+            placeholder_auroc += elem
+    # print("placeholder_auroc: %d" % placeholder_auroc)
+
+    # placeholder_auprc_calculation (average)
+    for row_list in output_values:
+        for elem in row_list:
+            placeholder_auprc += elem
+    placeholder_auprc = placeholder_auprc / len(output_values)
+    # print("placeholder_auprc: %d" % placeholder_auprc)
+
+    return (placeholder_auroc, placeholder_auprc)
 
 # takes a graph as input. and outputs two lists of subsets of the edges in the graph
 #   1. a set of training edges
