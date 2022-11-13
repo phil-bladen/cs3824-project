@@ -1,9 +1,23 @@
 import networkx as nx
 import random
+import matplotlib.pyplot as plt
+import numpy as np
 
 def main():
     G = nx.karate_club_graph()
     create_sets(G, 0.1)
+
+    # plot data
+    random_auroc = list()
+    for i in range(20):
+        random_auroc.append(random.randint(0, 100))
+
+    random_auprc = list()
+    for i in range(20):
+        random_auprc.append(random.randint(0, 100))
+
+    plot_values(random_auroc, random_auprc)
+    return 0
 
 # takes a graph as input. and outputs two lists of subsets of the edges in the graph
 #   1. a set of training edges
@@ -43,11 +57,6 @@ def create_sets(G: nx.Graph, fraction: float):
     
     return (training_edges, testing_edges)
 
-
-
-def run_algorithm_on_testing_data(testing_set: list):
-    print("running algorithm and graphing results")
-
     # here, I will:
     # 1. run some link prediction algorithm on the testing data
     # 2. rank the results by the score produced
@@ -64,6 +73,36 @@ def run_algorithm_on_testing_data(testing_set: list):
     # members finish step 1. This way, the group can just paste the LF-SVD results over my hard-coded
     # placeholder, and we will be done with the assignment
 
+def plot_values(auroc_values: list, auprc_values: list):
+    print("graphing results")
+
+    # step 5 is to create a box plot from the 10 runs of the data (20 values total)
+    # fig, axs = plt.subplots(2, 3)
+    # spread = np.random.rand(50) * 100
+    # center = np.ones(25) * 50
+    # flier_high = np.random.rand(10) * 100 + 100
+    # flier_low = np.random.rand(10) * -100
+    # data = np.concatenate((spread, center, flier_high, flier_low))
+    # axs[0, 0].boxplot(data)
+    # #axs[0,0].boxplot([10, 20, 30], )
+    # plt.show()
+
+    fig, axs = plt.subplots(1, 2)
+    axs[0].boxplot(auroc_values)
+    axs[0].set_title("AUROC Values")
+    axs[1].boxplot(auprc_values)
+    axs[1].set_title("AUPRC Values")
+    plt.show()
+        
+
+    # # i think that these below work
+    # data = [auroc_values, auprc_values] # try to create 2 plots
+    # fig = plt.figure(figsize = (10, 7))
+    # ax = fig.add_axes([0, 0, 1, 1])
+    # plt.boxplot(data)
+    # plt.show()
+
 
 if __name__ == "__main__":
     main()
+    
