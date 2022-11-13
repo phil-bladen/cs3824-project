@@ -27,20 +27,9 @@ def main():
         auroc_and_auprc = calculate_auroc_and_auprc(lfsvd_sample_output)
         ten_auroc_values.append(auroc_and_auprc[0])
         ten_auprc_values.append(auroc_and_auprc[1])
-    # end of main for loop that should run 10 times
 
+    # plot the 10 AUROC and AUPRC values
     plot_values(ten_auroc_values, ten_auprc_values)
-
-    # plot data using placeholder auroc and 
-    # random_auroc = list()
-    # for i in range(20):
-    #         random_auroc.append(random.randint(0, 100))
-    # random_auprc = list()
-    # for i in range(20):
-    #         random_auprc.append(random.randint(0, 100))
-
-    # plot_values(random_auroc, random_auprc)
-    # return 0
 
 def calculate_auroc_and_auprc(lfsvd_output_matrix):
     placeholder_auroc = 0
