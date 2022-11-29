@@ -57,11 +57,14 @@ def parse_csv(input_file_name: str, host_to_set_of_viruses: dict, virus_to_set_o
             break
     # print("debug here to inspect data structures")
     return 0 # success! 
+    
 
 def RandomWalk(viruses_to_hosts_DAG: nx.DiGraph):
     virusHostMat = nx.to_numpy_array(viruses_to_hosts_DAG)
-    rowSize = virusHostMat.size / 2
-    columnSize = rowSize
+    print(virusHostMat.shape)
+    rowSize = len(virusHostMat)
+    columnSize = rowSize 
+    #columnSize = len(virusHostMat[0])
     probMatrix = np.zeros(virusHostMat.shape)
     probArray = np.sum(virusHostMat, axis=1) #calculates degree of node i
     for row in range(rowSize):
@@ -70,10 +73,35 @@ def RandomWalk(viruses_to_hosts_DAG: nx.DiGraph):
                 probMatrix[row][col] = 1 / probArray[row]
     c = 0.9
     cPrime = 0.1
-    cProbTransMatrix = c * probMatrix.transpose()
+    cProbTransMatrix = np.array(c * probMatrix.transpose())
     idenMatrix = np.identity(rowSize)
-    invMatrix = np.invert(idenMatrix - cProbTransMatrix)
+    print (len(cProbTransMatrix))
+    print(len(cProbTransMatrix[0]))
+    diffMatrix = np.array(idenMatrix - cProbTransMatrix)
+    invMatrix = np.linalg.inv(diffMatrix)
+    print("it worked")
     qMatrix = cPrime * invMatrix
+    #rwrIndex = qMatrix + qMatrix.transpose()
+    rwrIndex = np.zeros(virusHostMat.shape)
+    for row in range(rowSize):
+        for col in range(columnSize):
+            if row == col:
+                rwrIndex [row] [col] = 0
+            else:
+                rwrIndex [row] [col] = qMatrix [row] [col] + qMatrix [col] [row] 
+    
+    #edges = row * col - row
+    #while edges > 0:
+     #   max(rwrIndex)
+
+        #find indices
+        #print
+        #change to 0
+
+
+
+
+
     #dMat = np.zeros(virusHostMat.shape)
     #for i in range(rowSize):
         #rowSum = 0
@@ -92,6 +120,7 @@ def main():
     virus_to_set_of_hosts = {}
     viruses_to_hosts_DAG = nx.DiGraph()
     parse_csv("Virion.csv", host_to_set_of_viruses, virus_to_set_of_hosts, viruses_to_hosts_DAG)
+    RandomWalk(viruses_to_hosts_DAG)
 
 
 if __name__ == "__main__":
