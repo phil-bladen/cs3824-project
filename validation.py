@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # validation steps:
-    # 0. for a given graph, split the graph into set of training data and testing data
+    # 0. for a given graph, split the graph into set of training data, positive testing edges, and negative testing edges
     # 1. run link prediction algorithm on the testing data
     # 2. rank the results by the score produced
     # 3. generate precision-recall curve and ROC curve
@@ -21,20 +21,20 @@ def main():
 
         # generate a sample output from LF-SVD run on the testing set of edges from the graph
         # note, the below method is implemented in a placeholder fashion
-        lfsvd_sample_output = get_lfsvd_output(edge_sets[0], edge_sets[1])
+        lfsvd_sample_output = get_lfsvd_output(edge_sets[0], edge_sets[1], edge_sets[2])
         
         # calculate auroc and auprc value given lfsvd_output
             # instead of doing the real calculation, as a placeholder I will:
                 # find the average value of the matrix and use that as a placeholder for auroc
                 # find the max value of the matrix and use that as a placeholder for auroc 
-        auroc_and_auprc = calculate_auroc_and_auprc(lfsvd_sample_output)
+        auroc_and_auprc = calculate_auroc_and_auprc(lfsvd_sample_output, edge_sets[1], edge_sets[2])
         ten_auroc_values.append(auroc_and_auprc[0])
         ten_auprc_values.append(auroc_and_auprc[1])
 
     # plot the 10 AUROC and AUPRC values
     plot_values(ten_auroc_values, ten_auprc_values)
 
-def calculate_auroc_and_auprc(lfsvd_output_matrix):
+def calculate_auroc_and_auprc(lfsvd_output_matrix, positive_testing_edges: list, negative_testing_edges: list):
     placeholder_auroc = 0
     placeholder_auprc = 0    
     output_values = lfsvd_output_matrix.tolist()
@@ -44,12 +44,13 @@ def calculate_auroc_and_auprc(lfsvd_output_matrix):
     # also, create a descending order version of the flattened list. this is used for AUROC and AUPRC calculation
     coordinates_dict = dict()
     flattened_list = list()
-    descending_flattened_list = list()
     for row_list in output_values:
         for elem in row_list:
             flattened_list.append(elem)
             coordinates_dict[elem] = (row_list, row_list.index(elem))
-    descending_flattened_list = flattened_list.sort(reverse=True)
+    descending_flattened_list = list()
+    descending_flattened_list = flattened_list
+    descending_flattened_list.sort(reverse=True)
 
     # placeholder_auroc_calculation (sum)
     for row_list in output_values:
@@ -63,6 +64,84 @@ def calculate_auroc_and_auprc(lfsvd_output_matrix):
             placeholder_auprc += elem
     placeholder_auprc = placeholder_auprc / len(output_values)
     # print("placeholder_auprc: %d" % placeholder_auprc)
+
+    # real auprc_calculation
+    testing_set = positive_testing_edges + negative_testing_edges
+    testing_edges_plus_scores = list()
+    #testing_set.sort(reverse=True)
+
+    for edge in testing_set:
+        u = edge[0]
+        v = edge[1]
+        edge_lfsvd_score = lfsvd_output_matrix[u][v]
+        # create a tuple with the edge and its score. add this tuple to the list
+        testing_edges_plus_scores.append((edge, edge_lfsvd_score))
+        #print(edge_lfsvd_score)
+
+    # sort edges by their lfsvd score
+    testing_edges_plus_scores.sort(key=lambda edge_score_tuple: edge_score_tuple[1], reverse=True)
+
+    sorted_testing_edges = list()
+
+    # create a list of the edges (sorted by lfsvd score)
+    for tup in testing_edges_plus_scores:
+        sorted_testing_edges.append(tup[0])
+
+    prc_counter = 0
+    true_positives = 0
+    false_positives = 0
+    false_negatives = 0
+    true_negatives = 0
+    precision_at_each_edge = list()
+    recall_at_each_edge = list()
+    for edge in sorted_testing_edges:
+        print(prc_counter)
+        if (prc_counter < len(testing_set) / 2.0):  # if in first half of testing set
+            if (edge in positive_testing_edges):
+                print("true positive")
+                true_positives += 1
+            else:
+                print("false positive")
+                false_positives += 1        
+        else:                                       # if in second half of testing set
+            if (edge in negative_testing_edges):
+                print("true negative")
+                # true_negatives += 1
+            else:
+                print("false negative")
+                false_negatives += 1
+        precision_at_current_edge = true_positives / (true_positives + false_negatives * 1.0) # 1.0 used for float conversion
+        precision_at_each_edge.append(precision_at_current_edge)
+        recall_at_current_edge = true_positives / (true_positives + false_positives * 1.0) # 1.0 used for float conversion
+        recall_at_each_edge.append(recall_at_current_edge)
+        prc_counter += 1
+    plt.plot(recall_at_each_edge, precision_at_each_edge)
+    # plt.plot(precision_at_each_edge, recall_at_each_edge)
+    plt.show()
+
+    # testing_set[0] = (2, 27)
+    # lfsvd_output_matrix[2][27] == 1.09 (score for that testing set edge). 
+
+    # for every testing_set edge
+        
+
+    
+    
+    # I'm working with the edges below. Don't I need to factor in their values to rank them? I need to rank them.
+    # for testing_set_edge in testing_set:
+    #     if (prc_counter < len(testing_set) / 2.0): # if in first half of testing set
+    #         if (testing_set_edge in positive_testing_edges):
+    #             print("true positive")
+    #         else:
+    #             print("false positive")
+    #     else: # if in second half of testing set
+
+
+
+    #     print(1)
+        # prc_counter += 1
+
+        
 
     return (placeholder_auroc, placeholder_auprc)
 
@@ -87,26 +166,29 @@ def create_sets(G: nx.Graph, fraction: float):
     for testing_edge in testing_edges:
         assert(testing_edge not in training_edges)
 
+    positive_edges = testing_edges
+    negative_edges = list()
+
     # create one negative edges for every positive edge in the training set
     # negative edges are created by:
     #  1. selecting 2 random nodes
     #  2. ensuring there is no existing edge between them (select new nodes if there is an edge)
     #  3. if not, add the edge to the testing set
-    for i in range(len(testing_edges)):
+    for i in range(len(positive_edges)):
         while(True):
             # G.nodes
             random_node_1 = random.choice(list(G))
             random_node_2 = random.choice(list(G))
             if (random_node_1 == random_node_2): continue # same node picked twice
             if (G.has_edge(random_node_1, random_node_2) or G.has_edge(random_node_2, random_node_1)): continue # edge already exists
-            else: testing_edges.append((random_node_1, random_node_2))
+            else: negative_edges.append((random_node_1, random_node_2))
             break
     
-    return (training_edges, testing_edges)
+    return (training_edges, positive_edges, negative_edges)
 
 # this is a placeholder method for obtaining the output from running lfsvd. I've just generated a random score from 0 to 2 for every edge between nodes i and j in the training set
-def get_lfsvd_output(training_set: list, testing_set: list):
-        training_set_size = len(testing_set)
+def get_lfsvd_output(training_set: list, positive_edges_list: list, negative_edges_list: list):
+        training_set_size = len(training_set)
         lfsvd_sample_output = np.zeros((training_set_size, training_set_size)) # empty nxn matrix
         for i in range(training_set_size):
             for j in range(training_set_size):
