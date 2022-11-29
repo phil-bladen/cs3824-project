@@ -75,11 +75,10 @@ def RandomWalk(viruses_to_hosts_DAG: nx.DiGraph):
     cPrime = 0.1
     cProbTransMatrix = np.array(c * probMatrix.transpose())
     idenMatrix = np.identity(rowSize)
-    print (len(cProbTransMatrix))
-    print(len(cProbTransMatrix[0]))
+    #print (len(cProbTransMatrix))
+    #print(len(cProbTransMatrix[0]))
     diffMatrix = np.array(idenMatrix - cProbTransMatrix)
     invMatrix = np.linalg.inv(diffMatrix)
-    print("it worked")
     qMatrix = cPrime * invMatrix
     #rwrIndex = qMatrix + qMatrix.transpose()
     rwrIndex = np.zeros(virusHostMat.shape)
