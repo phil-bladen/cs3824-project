@@ -2,6 +2,7 @@ import networkx as nx
 import random
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn import metrics as skl_metrics
 
 # validation steps:
     # 0. for a given graph, split the graph into set of training data, positive testing edges, and negative testing edges
@@ -87,37 +88,72 @@ def calculate_auroc_and_auprc(lfsvd_output_matrix, positive_testing_edges: list,
     for tup in testing_edges_plus_scores:
         sorted_testing_edges.append(tup[0])
 
+    # prc_counter = 0
+    # true_positives = 0
+    # false_positives = 0
+    # false_negatives = 0
+    # # true_negatives = 0
+    # precision_at_each_edge = list()
+    # recall_at_each_edge = list()
+    # for edge in sorted_testing_edges:
+    #     print(prc_counter)
+    #     if (prc_counter < len(testing_set) / 2.0):  # if in first half of testing set
+    #         if (edge in positive_testing_edges):
+    #             print("true positive")
+    #             true_positives += 1
+    #         else:
+    #             print("false positive")
+    #             false_positives += 1        
+    #     else:                                       # if in second half of testing set
+    #         if (edge in negative_testing_edges):
+    #             print("true negative")
+    #             # true_negatives += 1
+    #         else:
+    #             print("false negative")
+    #             false_negatives += 1
+    #     precision_at_current_edge = true_positives / (true_positives + false_negatives * 1.0) # 1.0 used for float conversion
+    #     precision_at_each_edge.append(precision_at_current_edge)
+    #     recall_at_current_edge = true_positives / (true_positives + false_positives * 1.0) # 1.0 used for float conversion
+    #     recall_at_each_edge.append(recall_at_current_edge)
+    #     prc_counter += 1
+    
     prc_counter = 0
     true_positives = 0
     false_positives = 0
-    false_negatives = 0
-    true_negatives = 0
+    # false_negatives = len(sorted_testing_edges) # false negative defined as an edge not yet reached, but is in the positive testing set
+    # true_negatives = 0
     precision_at_each_edge = list()
     recall_at_each_edge = list()
+    predictions_vector = list()
+    testing_score_list = list()
     for edge in sorted_testing_edges:
-        print(prc_counter)
-        if (prc_counter < len(testing_set) / 2.0):  # if in first half of testing set
-            if (edge in positive_testing_edges):
-                print("true positive")
-                true_positives += 1
-            else:
-                print("false positive")
-                false_positives += 1        
-        else:                                       # if in second half of testing set
-            if (edge in negative_testing_edges):
-                print("true negative")
-                # true_negatives += 1
-            else:
-                print("false negative")
-                false_negatives += 1
-        precision_at_current_edge = true_positives / (true_positives + false_negatives * 1.0) # 1.0 used for float conversion
-        precision_at_each_edge.append(precision_at_current_edge)
-        recall_at_current_edge = true_positives / (true_positives + false_positives * 1.0) # 1.0 used for float conversion
-        recall_at_each_edge.append(recall_at_current_edge)
+        if (edge in positive_testing_edges):
+            print("true positive")
+            true_positives += 1
+            predictions_vector.append(1)
+            
+        elif (edge in negative_testing_edges):
+            print("false positive")
+            false_positives += 1
+            predictions_vector.append(0)
+        # false_negatives -= 1
+        # precision_at_current_edge = true_positives / (true_positives + false_negatives * 1.0) # 1.0 used for float conversion
+        # precision_at_each_edge.append(precision_at_current_edge)
+        # recall_at_current_edge = true_positives / (true_positives + false_positives * 1.0) # 1.0 used for float conversion
+        # recall_at_each_edge.append(recall_at_current_edge)
+        testing_score_list.append(lfsvd_output_matrix[edge[0]][edge[1]])
         prc_counter += 1
-    plt.plot(recall_at_each_edge, precision_at_each_edge)
+
+    #prc_display = skl_metrics.PrecisionRecallDisplay.from_predictions(predictions_vector, testing_score_list, name="PRC")
+    avg_ps = skl_metrics.average_precision_score(predictions_vector, testing_score_list)
+    print("avg_ps: %f" % avg_ps)
+    
+    # roc_display = RocCurveDisplay.from_predictions()
+    
+
+    #plt.plot(recall_at_each_edge, precision_at_each_edge)
     # plt.plot(precision_at_each_edge, recall_at_each_edge)
-    plt.show()
+    #plt.show()
 
     # testing_set[0] = (2, 27)
     # lfsvd_output_matrix[2][27] == 1.09 (score for that testing set edge). 
