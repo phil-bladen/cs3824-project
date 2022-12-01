@@ -87,35 +87,6 @@ def calculate_auroc_and_auprc(lfsvd_output_matrix, positive_testing_edges: list,
     # create a list of the edges (sorted by lfsvd score)
     for tup in testing_edges_plus_scores:
         sorted_testing_edges.append(tup[0])
-
-    # prc_counter = 0
-    # true_positives = 0
-    # false_positives = 0
-    # false_negatives = 0
-    # # true_negatives = 0
-    # precision_at_each_edge = list()
-    # recall_at_each_edge = list()
-    # for edge in sorted_testing_edges:
-    #     print(prc_counter)
-    #     if (prc_counter < len(testing_set) / 2.0):  # if in first half of testing set
-    #         if (edge in positive_testing_edges):
-    #             print("true positive")
-    #             true_positives += 1
-    #         else:
-    #             print("false positive")
-    #             false_positives += 1        
-    #     else:                                       # if in second half of testing set
-    #         if (edge in negative_testing_edges):
-    #             print("true negative")
-    #             # true_negatives += 1
-    #         else:
-    #             print("false negative")
-    #             false_negatives += 1
-    #     precision_at_current_edge = true_positives / (true_positives + false_negatives * 1.0) # 1.0 used for float conversion
-    #     precision_at_each_edge.append(precision_at_current_edge)
-    #     recall_at_current_edge = true_positives / (true_positives + false_positives * 1.0) # 1.0 used for float conversion
-    #     recall_at_each_edge.append(recall_at_current_edge)
-    #     prc_counter += 1
     
     prc_counter = 0
     true_positives = 0
@@ -147,6 +118,15 @@ def calculate_auroc_and_auprc(lfsvd_output_matrix, positive_testing_edges: list,
     #prc_display = skl_metrics.PrecisionRecallDisplay.from_predictions(predictions_vector, testing_score_list, name="PRC")
     avg_ps = skl_metrics.average_precision_score(predictions_vector, testing_score_list)
     print("avg_ps: %f" % avg_ps)
+    prc_display = skl_metrics.PrecisionRecallDisplay.from_predictions(predictions_vector, testing_score_list)
+    # _ = prc_display.ax_.set_title("2-class Precision-Recall curve")
+    prc_display.plot()
+
+    auroc = skl_metrics.roc_auc_score(predictions_vector, testing_score_list)
+    print("auroc: %f" % auroc)
+    auroc_display = skl_metrics.RocCurveDisplay.from_predictions(predictions_vector, testing_score_list)
+    auroc_display.plot()
+
     
     # roc_display = RocCurveDisplay.from_predictions()
     
@@ -156,30 +136,9 @@ def calculate_auroc_and_auprc(lfsvd_output_matrix, positive_testing_edges: list,
     #plt.show()
 
     # testing_set[0] = (2, 27)
-    # lfsvd_output_matrix[2][27] == 1.09 (score for that testing set edge). 
+    # lfsvd_output_matrix[2][27] == 1.09 (score for that testing set edge).         
 
-    # for every testing_set edge
-        
-
-    
-    
-    # I'm working with the edges below. Don't I need to factor in their values to rank them? I need to rank them.
-    # for testing_set_edge in testing_set:
-    #     if (prc_counter < len(testing_set) / 2.0): # if in first half of testing set
-    #         if (testing_set_edge in positive_testing_edges):
-    #             print("true positive")
-    #         else:
-    #             print("false positive")
-    #     else: # if in second half of testing set
-
-
-
-    #     print(1)
-        # prc_counter += 1
-
-        
-
-    return (placeholder_auroc, placeholder_auprc)
+    return (avg_ps, auroc)
 
 # takes a graph as input. and outputs two lists of subsets of the edges in the graph
 #   1. a set of training edges
