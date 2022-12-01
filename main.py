@@ -88,6 +88,17 @@ def RandomWalk(viruses_to_hosts_DAG: nx.DiGraph):
                 rwrIndex [row] [col] = 0
             else:
                 rwrIndex [row] [col] = qMatrix [row] [col] + qMatrix [col] [row] 
+    #rowSizeRWR = len(rwrIndex)
+    #colSizeRWR = len(rwrIndex[0])
+    #for rowRWR in range(rowSizeRWR):
+    #    for colRWR in range(colSizeRWR):
+    #        min = 1
+    #        if abs(rwrIndex [row] [col]) < min:
+    #            min = rwrIndex [row] [col]
+    #            colMin = col
+        # display predicted false positive
+        # edge is [row] [colMin]
+
     
     #edges = row * col - row
     #while edges > 0:
