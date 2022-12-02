@@ -81,20 +81,23 @@ def RandomWalk(viruses_to_hosts_DAG: nx.DiGraph):
     invMatrix = np.linalg.inv(diffMatrix)
     qMatrix = cPrime * invMatrix
     #rwrIndex = qMatrix + qMatrix.transpose()
-    rwrIndex = np.zeros(virusHostMat.shape)
+    rwrArray = np.zeros(virusHostMat.shape)
     for row in range(rowSize):
         for col in range(columnSize):
             if row == col:
-                rwrIndex [row] [col] = -1
+                rwrArray [row] [col] = -1
             else:
-                rwrIndex [row] [col] = qMatrix [row] [col] + qMatrix [col] [row] 
+                rwrArray [row] [col] = qMatrix [row] [col] + qMatrix [col] [row] 
+    rwrDict = dict(enumerate(rwrArray.flatten(), 1))
+    sortedRWR = sorted(rwrDict.items(), key = lambda val: val[1])
+    sortedDict = dict(sortedRWR)
     #rowSizeRWR = len(rwrIndex)
     #colSizeRWR = len(rwrIndex[0])
     #for rowRWR in range(rowSizeRWR):
     #    for colRWR in range(colSizeRWR):
-    #        min = 1
-    #        if abs(rwrIndex [row] [col]) < min and abs(rwrIndex [row] [col]) > 0:
-    #            min = rwrIndex [row] [col]
+    #        max = 0
+    #        if abs(rwrIndex [row] [col]) > max:
+    #            max = rwrIndex [row] [col]
     #            colMin = col
          #display predicted false positive
          #edge is [row] [colMin]
