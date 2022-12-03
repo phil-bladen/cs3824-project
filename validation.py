@@ -36,35 +36,6 @@ def main():
     plot_values(ten_auroc_values, ten_auprc_values)
 
 def calculate_auroc_and_auprc(lfsvd_output_matrix, positive_testing_edges: list, negative_testing_edges: list):
-    placeholder_auroc = 0
-    placeholder_auprc = 0    
-    output_values = lfsvd_output_matrix.tolist()
-
-    # create a flattened list of all matrix values
-    # also, create a dictionary of the coordinates of every element in the original output matrix. these coordinates will be checked when calculating AUROC and AUPRC
-    # also, create a descending order version of the flattened list. this is used for AUROC and AUPRC calculation
-    coordinates_dict = dict()
-    flattened_list = list()
-    for row_list in output_values:
-        for elem in row_list:
-            flattened_list.append(elem)
-            coordinates_dict[elem] = (row_list, row_list.index(elem))
-    descending_flattened_list = list()
-    descending_flattened_list = flattened_list
-    descending_flattened_list.sort(reverse=True)
-
-    # placeholder_auroc_calculation (sum)
-    for row_list in output_values:
-        for elem in row_list:
-            placeholder_auroc += elem
-    # print("placeholder_auroc: %d" % placeholder_auroc)
-
-    # placeholder_auprc_calculation (average)
-    for row_list in output_values:
-        for elem in row_list:
-            placeholder_auprc += elem
-    placeholder_auprc = placeholder_auprc / len(output_values)
-    # print("placeholder_auprc: %d" % placeholder_auprc)
 
     # real auprc_calculation
     testing_set = positive_testing_edges + negative_testing_edges

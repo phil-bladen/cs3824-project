@@ -1,6 +1,7 @@
 import networkx as nx
 import matplotlib as plt
 import numpy as np
+import lf-svd
 
 class interaction:
     def __init__(self):
@@ -81,40 +82,17 @@ def RandomWalk(viruses_to_hosts_DAG: nx.DiGraph):
     invMatrix = np.linalg.inv(diffMatrix)
     qMatrix = cPrime * invMatrix
     #rwrIndex = qMatrix + qMatrix.transpose()
-    rwrIndex = np.zeros(virusHostMat.shape)
+    rwrArray = np.zeros(virusHostMat.shape)
     for row in range(rowSize):
         for col in range(columnSize):
             if row == col:
-                rwrIndex [row] [col] = 0
+                rwrArray [row] [col] = -1
             else:
-                rwrIndex [row] [col] = qMatrix [row] [col] + qMatrix [col] [row]
-
+                rwrArray [row] [col] = qMatrix [row] [col] + qMatrix [col] [row] 
+    rwrDict = dict(enumerate(rwrArray.flatten(), 1))
+    sortedRWR = sorted(rwrDict.items(), key = lambda val: val[1])
+    sortedDict = dict(sortedRWR)
     print("debug here")
-    
-    #edges = row * col - row
-    #while edges > 0:
-     #   max(rwrIndex)
-
-        #find indices
-        #print
-        #change to 0
-
-
-
-
-
-    #dMat = np.zeros(virusHostMat.shape)
-    #for i in range(rowSize):
-        #rowSum = 0
-        #for j in range(columnSize):
-            #if i != j: 
-                #rowSum += virusHostMat[i][j]
-        #dMat[i][i] = rowSum
-    #dInv = np.linalg.inv(dMat)
-    #matrix inverse
-
-
-
 
 def main():
     host_to_set_of_viruses = {}
