@@ -3,6 +3,7 @@ import networkx as nx
 import numpy as np
 import scipy.sparse as sc
 from networkx.algorithms import bipartite
+import random
 
 class interaction:
     def __init__(self):
@@ -71,15 +72,17 @@ def main():
     virus_to_set_of_hosts = {}
     viruses_to_hosts_DAG = nx.DiGraph()
     parse_csv("Virion.csv", host_to_set_of_viruses, virus_to_set_of_hosts, viruses_to_hosts_DAG)
+    sets = create_sets(viruses_to_hosts_DAG, 0.1)
     
-    print(len(list(viruses_to_hosts_DAG.nodes())))
-    print(len(list(viruses_to_hosts_DAG.neighbors('37124'))))
+    
+    # print(len(list(viruses_to_hosts_DAG.nodes())))
+    # print(len(list(viruses_to_hosts_DAG.neighbors('37124'))))
     #print(nx.get_node_attributes(viruses_to_hosts_DAG, 'name'))
 
     #A = nx.to_numpy_matrix(viruses_to_hosts_DAG)
     #print(A)
 
-    print(bipartite.is_bipartite(viruses_to_hosts_DAG))
+    # print(bipartite.is_bipartite(viruses_to_hosts_DAG))
 
     list_hosts = [x for x,y in viruses_to_hosts_DAG.nodes(data=True) if y['type']=='host']
     list_viruses = [x for x,y in viruses_to_hosts_DAG.nodes(data=True) if y['type']=='virus']
@@ -90,7 +93,42 @@ def main():
     sc.save_npz("tryout3", A, compressed=False)
     N1 = sc.load_npz("tryout3.npz")
     print(N1)
-    #SciPy and Numpy error handling 
+    #SciPy and Numpy error handling
+
+def create_sets(G: nx.Graph, fraction: float):
+    num_edges_to_remove = int(fraction * G.number_of_edges())
+    training_edges = list(G.edges) # at the start, the entire graph is the "training" set
+    testing_edges = list()
+    
+    for i in range(num_edges_to_remove):
+        random_edge_chosen = random.choice(training_edges)
+        G.remove_edge(random_edge_chosen[0], random_edge_chosen[1]) # edges are tuples of vertices u and v
+        training_edges.remove(random_edge_chosen)
+        testing_edges.append(random_edge_chosen)
+
+    # ensure no overlap between sets
+    for testing_edge in testing_edges:
+        assert(testing_edge not in training_edges)
+
+    positive_edges = testing_edges
+    negative_edges = list()
+
+    # create one negative edges for every positive edge in the training set
+    # negative edges are created by:
+    #  1. selecting 2 random nodes
+    #  2. ensuring there is no existing edge between them (select new nodes if there is an edge)
+    #  3. if not, add the edge to the testing set
+    for i in range(len(positive_edges)):
+        while(True):
+            # G.nodes
+            random_node_1 = random.choice(list(G))
+            random_node_2 = random.choice(list(G))
+            if (random_node_1 == random_node_2): continue # same node picked twice
+            if (G.has_edge(random_node_1, random_node_2) or G.has_edge(random_node_2, random_node_1)): continue # edge already exists
+            else: negative_edges.append((random_node_1, random_node_2))
+            break
+    
+    return (training_edges, positive_edges, negative_edges)
 
 
 if __name__ == "__main__":

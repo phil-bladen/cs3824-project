@@ -30,11 +30,19 @@ def createK(A, k):
     return nA
 
 #Load here the matrix with whatever name we provide 
-sp_matrix = sc.load_npz("parsed_graph.npz").todense()
+sp_matrix = sc.load_npz("tryout3.npz").todense()
+print("printing sp_matrix")
 print(sp_matrix)
 alpha = [0, 1, 0, 0]
 #M = [[1, 0, 0, 0, 1, 0],[0, 1, 1, 0, 0, 0],[0, 0, 1, 1, 1, 1]]
-
+print("starting createA()")
 A = createA(sp_matrix,alpha)
+print("finished createA()")
+print("starting createK()")
 nA = createK(A, 1)
 print("\n", nA)
+print("finished createK(), saving now")
+# sc.save_npz("lf-svd-output-from-tryout3.npz", nA, compressed=False)
+np.save("lf-svd-output-from-tryout3.npy", nA)
+loaded = np.load("lf-svd-output-from-tryout3.npy")
+print(loaded)

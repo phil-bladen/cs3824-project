@@ -87,7 +87,9 @@ def RandomWalk(viruses_to_hosts_DAG: nx.DiGraph):
             if row == col:
                 rwrIndex [row] [col] = 0
             else:
-                rwrIndex [row] [col] = qMatrix [row] [col] + qMatrix [col] [row] 
+                rwrIndex [row] [col] = qMatrix [row] [col] + qMatrix [col] [row]
+
+    print("debug here")
     
     #edges = row * col - row
     #while edges > 0:
@@ -119,8 +121,12 @@ def main():
     virus_to_set_of_hosts = {}
     viruses_to_hosts_DAG = nx.DiGraph()
     parse_csv("Virion.csv", host_to_set_of_viruses, virus_to_set_of_hosts, viruses_to_hosts_DAG)
+    # test_loading()
     RandomWalk(viruses_to_hosts_DAG)
 
+def test_loading():
+    test_array = np.load("output_k5_1000.npy")
+    print(test_array[0]) # print first row
 
 if __name__ == "__main__":
     main()
