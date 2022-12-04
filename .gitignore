@@ -1,2 +1,6 @@
 *.pyc
 *.pyo
+edge_sets*
+*.npy
+*.npz
+*.csv

@@ -8,6 +8,7 @@ from sklearn import metrics as skl_metrics
 import matplotlib.pyplot as plt
 import os
 import time
+import pickle
 
 class interaction:
     def __init__(self):
@@ -76,6 +77,11 @@ def create_sets(G: nx.Graph, fraction: float):
     os.mkdir(path=path_name, mode=0o777)
     num_edges_to_remove = int(fraction * G.number_of_edges())
     training_edges = list(G.edges) # at the start, the entire graph is the "training" set
+    # write training set to disk
+    t_edges_file = open(path_name + "/training_edges", "ab")
+    pickle.dump(training_edges, t_edges_file)
+    t_edges_file.close()
+
     testing_edges = list()
     
     for i in range(num_edges_to_remove):
@@ -89,9 +95,13 @@ def create_sets(G: nx.Graph, fraction: float):
         assert(testing_edge not in training_edges)
 
     positive_edges = testing_edges
-    negative_edges = list()
+    # write positive edges to disk
+    p_edges_file = open(path_name + "/positive_edges", "ab")
+    pickle.dump(positive_edges, p_edges_file)
+    p_edges_file.close()
 
-    # create one negative edges for every positive edge in the training set
+    negative_edges = list()
+    # create one negative edge for every positive edge in the training set
     # negative edges are created by:
     #  1. selecting 2 random nodes
     #  2. ensuring there is no existing edge between them (select new nodes if there is an edge)
@@ -105,6 +115,11 @@ def create_sets(G: nx.Graph, fraction: float):
             if (G.has_edge(random_node_1, random_node_2) or G.has_edge(random_node_2, random_node_1)): continue # edge already exists
             else: negative_edges.append((random_node_1, random_node_2))
             break
+    # write negative edges to disk
+    n_edges_file = open(path_name + "/negative_edges", "ab")
+    pickle.dump(negative_edges, n_edges_file)
+    n_edges_file.close()
+    
     
     return (training_edges, positive_edges, negative_edges)
 
@@ -146,15 +161,19 @@ def main():
     virus_to_set_of_hosts = {}
     viruses_to_hosts_DAG = nx.DiGraph()
     parse_csv("Virion.csv", host_to_set_of_viruses, virus_to_set_of_hosts, viruses_to_hosts_DAG)
-    print("starting RandomWalk")
-    RandomWalk(viruses_to_hosts_DAG) # new
-    print("finished RandomWalk")
+    # print("starting RandomWalk")
+    # RandomWalk(viruses_to_hosts_DAG) # new
+    # print("finished RandomWalk")
+    print("testing new PRC and ROC calculations")
+    new_calculate("output-when-using-tryout3.npy", "edge_sets_1670117625.3284886/positive_edges", "edge_sets_1670117625.3284886/negative_edges")
+
     sets = create_sets(viruses_to_hosts_DAG, 0.1)
     
     list_hosts = [x for x,y in viruses_to_hosts_DAG.nodes(data=True) if y['type']=='host']
     list_viruses = [x for x,y in viruses_to_hosts_DAG.nodes(data=True) if y['type']=='virus']
     
-    A = bipartite.biadjacency_matrix(viruses_to_hosts_DAG, list_viruses)
+    #A = bipartite.biadjacency_matrix(viruses_to_hosts_DAG, list_viruses)
+    A = nx.adjacency_matrix(viruses_to_hosts_DAG)
     print(A)
     m1 = sc.csr_matrix.toarray(A)
     sc.save_npz("tryout3", A, compressed=False)
@@ -232,6 +251,98 @@ def validate():
     # plot the 10 AUROC and AUPRC values
     plot_values(ten_auroc_values, ten_auprc_values)
 
+def new_calculate(lfsvd_output_file: str, positive_testing_edges_file: str, negative_testing_edges_file: str):
+    # load lfsvd output
+    edge_prob_matrix = np.load(lfsvd_output_file, allow_pickle=True)
+    print(edge_prob_matrix[1][4])
+    
+    # load positive edges output
+    p_filepointer = open(positive_testing_edges_file, "rb")
+    positive_edges = pickle.load(p_filepointer)
+    p_filepointer.close()
+
+    # load negative edges output
+    n_filepointer = open(negative_testing_edges_file, "rb")
+    negative_edges = pickle.load(n_filepointer)
+    n_filepointer.close()
+
+    # real auprc_calculation
+    testing_set = positive_edges + negative_edges
+    testing_edges_plus_scores = list()
+
+    for edge in testing_set:
+        u = int(edge[0])
+        v = int(edge[1])
+        edge_lfsvd_score = edge_prob_matrix[u][v]
+        #edge_lfsvd_score = sc.csr_matrix.__getitem__ edge_prob_matrix[u][v]
+        # create a tuple with the edge and its score. add this tuple to the list
+        testing_edges_plus_scores.append((edge, edge_lfsvd_score))
+        #print(edge_lfsvd_score)
+
+    # sort edges by their lfsvd score
+    testing_edges_plus_scores.sort(key=lambda edge_score_tuple: edge_score_tuple[1], reverse=True)
+
+    sorted_testing_edges = list()
+
+    # create a list of the edges (sorted by lfsvd score)
+    for tup in testing_edges_plus_scores:
+        sorted_testing_edges.append(tup[0])
+    
+    prc_counter = 0
+    true_positives = 0
+    false_positives = 0
+    # false_negatives = len(sorted_testing_edges) # false negative defined as an edge not yet reached, but is in the positive testing set
+    # true_negatives = 0
+    precision_at_each_edge = list()
+    recall_at_each_edge = list()
+    predictions_vector = list()
+    testing_score_list = list()
+    for edge in sorted_testing_edges:
+        if (edge in positive_edges):
+            print("true positive")
+            true_positives += 1
+            predictions_vector.append(1)
+            
+        elif (edge in negative_edges):
+            print("false positive")
+            false_positives += 1
+            predictions_vector.append(0)
+        # false_negatives -= 1
+        # precision_at_current_edge = true_positives / (true_positives + false_negatives * 1.0) # 1.0 used for float conversion
+        # precision_at_each_edge.append(precision_at_current_edge)
+        # recall_at_current_edge = true_positives / (true_positives + false_positives * 1.0) # 1.0 used for float conversion
+        # recall_at_each_edge.append(recall_at_current_edge)
+        testing_score_list.append(edge_prob_matrix[edge[0]][edge[1]])
+        prc_counter += 1
+
+    #prc_display = skl_metrics.PrecisionRecallDisplay.from_predictions(predictions_vector, testing_score_list, name="PRC")
+    avg_ps = skl_metrics.average_precision_score(predictions_vector, testing_score_list)
+    print("avg_ps: %f" % avg_ps)
+    prc_display = skl_metrics.PrecisionRecallDisplay.from_predictions(predictions_vector, testing_score_list)
+    # _ = prc_display.ax_.set_title("2-class Precision-Recall curve")
+    prc_display.plot()
+
+    auroc = skl_metrics.roc_auc_score(predictions_vector, testing_score_list)
+    print("auroc: %f" % auroc)
+    auroc_display = skl_metrics.RocCurveDisplay.from_predictions(predictions_vector, testing_score_list)
+    auroc_display.plot()
+
+    
+    # roc_display = RocCurveDisplay.from_predictions()
+    
+
+    #plt.plot(recall_at_each_edge, precision_at_each_edge)
+    # plt.plot(precision_at_each_edge, recall_at_each_edge)
+    #plt.show()
+
+    # testing_set[0] = (2, 27)
+    # lfsvd_output_matrix[2][27] == 1.09 (score for that testing set edge).         
+
+    return (avg_ps, auroc)
+
+    print("e")
+
+
 def calculate_auroc_and_auprc(lfsvd_output_matrix, positive_testing_edges: list, negative_testing_edges: list):
 
     # real auprc_calculation
@@ -307,47 +418,6 @@ def calculate_auroc_and_auprc(lfsvd_output_matrix, positive_testing_edges: list,
     # lfsvd_output_matrix[2][27] == 1.09 (score for that testing set edge).         
 
     return (avg_ps, auroc)
-
-# takes a graph as input. and outputs two lists of subsets of the edges in the graph
-#   1. a set of training edges
-#   2. a set of testing edges
-# this function removes the testing edges from the input NetworkX graph
-# the "fraction" parameter designates what fraction of edges from the original graph
-# will be randomly selected to be placed into the training set
-def create_sets(G: nx.Graph, fraction: float):
-    num_edges_to_remove = int(fraction * G.number_of_edges())
-    training_edges = list(G.edges) # at the start, the entire graph is the "training" set
-    testing_edges = list()
-    
-    for i in range(num_edges_to_remove):
-        random_edge_chosen = random.choice(training_edges)
-        G.remove_edge(random_edge_chosen[0], random_edge_chosen[1]) # edges are tuples of vertices u and v
-        training_edges.remove(random_edge_chosen)
-        testing_edges.append(random_edge_chosen)
-
-    # ensure no overlap between sets
-    for testing_edge in testing_edges:
-        assert(testing_edge not in training_edges)
-
-    positive_edges = testing_edges
-    negative_edges = list()
-
-    # create one negative edges for every positive edge in the training set
-    # negative edges are created by:
-    #  1. selecting 2 random nodes
-    #  2. ensuring there is no existing edge between them (select new nodes if there is an edge)
-    #  3. if not, add the edge to the testing set
-    for i in range(len(positive_edges)):
-        while(True):
-            # G.nodes
-            random_node_1 = random.choice(list(G))
-            random_node_2 = random.choice(list(G))
-            if (random_node_1 == random_node_2): continue # same node picked twice
-            if (G.has_edge(random_node_1, random_node_2) or G.has_edge(random_node_2, random_node_1)): continue # edge already exists
-            else: negative_edges.append((random_node_1, random_node_2))
-            break
-    
-    return (training_edges, positive_edges, negative_edges)
 
 # this is a placeholder method for obtaining the output from running lfsvd. I've just generated a random score from 0 to 2 for every edge between nodes i and j in the training set
 def get_lfsvd_output(training_set: list, positive_edges_list: list, negative_edges_list: list):

@@ -87,12 +87,13 @@ def main():
     list_hosts = [x for x,y in viruses_to_hosts_DAG.nodes(data=True) if y['type']=='host']
     list_viruses = [x for x,y in viruses_to_hosts_DAG.nodes(data=True) if y['type']=='virus']
     
-    A = bipartite.biadjacency_matrix(viruses_to_hosts_DAG, list_viruses)
+    A = bipartite.biadjacency_matrix(viruses_to_hosts_DAG, list_viruses) # csr matrix
+    # A = nx.adjacency_matrix(viruses_to_hosts_DAG)
     print(A)
     m1 = sc.csr_matrix.toarray(A)
     sc.save_npz("tryout3", A, compressed=False)
     N1 = sc.load_npz("tryout3.npz")
-    print(N1)
+    print(N1) # csr_matrix
     #SciPy and Numpy error handling
 
 def create_sets(G: nx.Graph, fraction: float):
