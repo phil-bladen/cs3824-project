@@ -165,24 +165,78 @@ def main():
     # RandomWalk(viruses_to_hosts_DAG) # new
     # print("finished RandomWalk")
     print("testing new PRC and ROC calculations")
-    new_calculate("output-when-using-tryout3.npy", "edge_sets_1670117625.3284886/positive_edges", "edge_sets_1670117625.3284886/negative_edges")
+    #new_calculate("output-when-using-tryout3.npy", "edge_sets_1670117625.3284886/positive_edges", "edge_sets_1670117625.3284886/negative_edges")
+    
+
 
     sets = create_sets(viruses_to_hosts_DAG, 0.1)
+
+    # write the graph here, then try the lookup thing
+    nx.write_adjlist(viruses_to_hosts_DAG, "nxGraphFile")
+    # print(viruses_to_hosts_DAG[5])
+    test_read = nx.read_adjlist("nxGraphFile")
+    # print(test_read[5])
     
-    list_hosts = [x for x,y in viruses_to_hosts_DAG.nodes(data=True) if y['type']=='host']
-    list_viruses = [x for x,y in viruses_to_hosts_DAG.nodes(data=True) if y['type']=='virus']
+    list_hosts = [x for x,y in viruses_to_hosts_DAG.nodes(data=True) if y['type']=='host'] # might be 9600 long
+    list_viruses = [x for x,y in viruses_to_hosts_DAG.nodes(data=True) if y['type']=='virus'] # might be 4100 long
     
-    #A = bipartite.biadjacency_matrix(viruses_to_hosts_DAG, list_viruses)
-    A = nx.adjacency_matrix(viruses_to_hosts_DAG)
-    print(A)
+    h_list_ID_to_index = dict()
+    v_list_ID_to_index = dict()
+
+    h_counter = 0
+    for host in list_hosts:
+        h_list_ID_to_index[host] = h_counter
+        h_counter += 1
+    
+    v_counter = 0
+    for virus in list_viruses:
+        v_list_ID_to_index[virus] = v_counter
+        v_counter += 1
+
+    
+    # A = bipartite.biadjacency_matrix(viruses_to_hosts_DAG, list_viruses)
+    A = bipartite.biadjacency_matrix(viruses_to_hosts_DAG, list_viruses, list_hosts)
+    A_arr = A.toarray()
+
+    # for virus in list_viruses:
+    #     for host in list_hosts:
+    #         virus_biadj_index = v_list_ID_to_index[virus]
+    #         host_biadj_index = h_list_ID_to_index[host]
+
+    #         # virus_list_index = v_list_ID_to_index[virus]
+    #         # host_list_index = h_list_ID_to_index[host]
+
+    #         # virus_biadj_index = int(list_hosts[virus_list_index])
+    #         # host_biadj_index = int(list_hosts[host_list_index])
+
+
+    #         assert(A_arr[virus_biadj_index][host_biadj_index] == 1)
+    edges_list = viruses_to_hosts_DAG.edges
+    for edge in edges_list:
+        virus_biadj_index = v_list_ID_to_index[edge[0]]
+        host_biadj_index = h_list_ID_to_index[edge[1]]
+        assert(A_arr[virus_biadj_index][host_biadj_index] == 1)
+    print("tests passed! you now have a map of nodeIDs to biadj (and probably also lfsvd) elements")
+        
+
+
+
+    # A_adj = nx.adjacency_matrix(viruses_to_hosts_DAG)
+    # print("size of A_adj")
+    # print(A_adj.get_shape())
     m1 = sc.csr_matrix.toarray(A)
-    sc.save_npz("tryout3", A, compressed=False)
-    N1 = sc.load_npz("tryout3.npz")
-    print(N1)
+    # sc.save_npz("tryout3", A, compressed=False)
+    # sc.save_npz("13724_attempt.npz", A_adj, compressed=False)
+    # N1 = sc.load_npz("tryout3.npz")
+    # print(N1)
     #SciPy and Numpy error handling
 
     #Load here the matrix with whatever name we provide
-    lf_svd.create_prob_matrix("tryout3.npz", [0, 1, 0, 0], "output-when-using-tryout3.npy")
+    # lf_svd.create_prob_matrix("tryout3.npz", [0, 1, 0, 0], "output-when-using-tryout3.npy")
+    lf_svd.create_prob_matrix("13724_attempt.npz", [0, 1, 0, 0], "results_13724_attempt.npy")
+    edge_prob_matrix = np.load("results_13724_attempt.npy", allow_pickle=True)
+    print(edge_prob_matrix.shape)
+    print("debug")
     # sp_matrix = sc.load_npz("tryout3.npz").todense()
     # print("printing sp_matrix")
     # print(sp_matrix)

@@ -3,6 +3,8 @@ import numpy as np
 
 def create_prob_matrix(input_matrix_file: str, alpha: list, output_matrix_file: str):
     sp_matrix = sc.load_npz(input_matrix_file).todense()
+    print("sc shape")
+    print(sp_matrix.shape)
     #Load here the matrix with whatever name we provide
     A = createA(sp_matrix, alpha)
     nA = createK(A, 1)
@@ -28,6 +30,7 @@ def createA(Y, alpha):
             v = [Y[i,j], 1/n*sums_j[0,j], 1/m*sums_i[i,0], 1/(n*m)*sum_all]
             A[i][j] = np.dot(v, alpha)
             #print(A)
+        if (i % 100) == 0: print("i: %d" % i)
     return A
 
 
@@ -35,6 +38,7 @@ def createK(A, k):
     # U, S, V = svd(A)
     U, S, V = np.linalg.svd(A, full_matrices=False)
     counter = 0
+    print("len(S): %d" % len(S))
     for eig in S:
         if eig > k:
             S[counter] = 0

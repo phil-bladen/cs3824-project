@@ -73,6 +73,7 @@ def main():
     viruses_to_hosts_DAG = nx.DiGraph()
     parse_csv("Virion.csv", host_to_set_of_viruses, virus_to_set_of_hosts, viruses_to_hosts_DAG)
     sets = create_sets(viruses_to_hosts_DAG, 0.1)
+
     
     
     # print(len(list(viruses_to_hosts_DAG.nodes())))
