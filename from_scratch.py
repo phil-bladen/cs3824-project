@@ -171,32 +171,30 @@ def main():
     # print("starting RandomWalk")
     # RandomWalk(viruses_to_hosts_DAG) # new
     # print("finished RandomWalk")
-    print("testing new PRC and ROC calculations")
-    
-    
 
-
-
-    
-    
     list_hosts = [x for x,y in viruses_to_hosts_DAG.nodes(data=True) if y['type']=='host'] # might be 9600 long
     list_viruses = [x for x,y in viruses_to_hosts_DAG.nodes(data=True) if y['type']=='virus'] # might be 4100 long
 
-    h_list_fp = open("list_hosts", "ab")
-    pickle.dump(list_hosts, h_list_fp)
-    h_list_fp.close()
-    v_list_fp = open("list_viruses", "ab")
-    pickle.dump(list_viruses, v_list_fp)
-    v_list_fp.close()
-    
+    # save these lists to disk
+
+    # h_list_fp = open("list_hosts", "ab")
+    # pickle.dump(list_hosts, h_list_fp)
+    # h_list_fp.close()
+    # v_list_fp = open("list_viruses", "ab")
+    # pickle.dump(list_viruses, v_list_fp)
+    # v_list_fp.close()
+
+        
     h_list_ID_to_index = dict()
     v_list_ID_to_index = dict()
 
+    # this can go in the "calculation" code (which takes file representations of p_edges, n_edges,)
     h_counter = 0
     for host in list_hosts:
         h_list_ID_to_index[host] = h_counter
         h_counter += 1
-    
+
+    # this can go in the "calculation" code    
     v_counter = 0
     for virus in list_viruses:
         v_list_ID_to_index[virus] = v_counter
@@ -204,14 +202,13 @@ def main():
 
     sets = create_sets(viruses_to_hosts_DAG, 0.1, list_viruses, list_hosts)
 
-    # write the graph here, then try the lookup thing
-    nx.write_adjlist(viruses_to_hosts_DAG, "nxGraphFile")
-    # print(viruses_to_hosts_DAG[5])
-    test_read = nx.read_adjlist("nxGraphFile")
+    # # write the graph here, then try the lookup thing
+    # nx.write_adjlist(viruses_to_hosts_DAG, "nxGraphFile")
+    # # print(viruses_to_hosts_DAG[5])
+    # test_read = nx.read_adjlist("nxGraphFile")
     # print(test_read[5])
 
-    # new_calculate("output-when-using-tryout3.npy", "edge_sets_1670117625.3284886/positive_edges", "edge_sets_1670117625.3284886/negative_edges", list_hosts, list_viruses, h_list_ID_to_index, v_list_ID_to_index)
-    new_calculate("output-when-using-tryout3.npy", sets[1], sets[2], list_hosts, list_viruses, h_list_ID_to_index, v_list_ID_to_index)
+    # new_calculate("output-when-using-tryout3.npy", sets[1], sets[2], list_hosts, list_viruses, h_list_ID_to_index, v_list_ID_to_index)
 
     
     # A = bipartite.biadjacency_matrix(viruses_to_hosts_DAG, list_viruses)
@@ -244,8 +241,9 @@ def main():
     #SciPy and Numpy error handling
 
     #Load here the matrix with whatever name we provide
-    sc.save_npz("brand-new.npz", A, compressed=False)
-    lf_svd.create_prob_matrix("brand-new.npz", [0, 1, 0, 0], "output-brand-new.npy")
+    sc.save_npz("k5-1000.npz", A, compressed=False)
+    lf_svd.create_prob_matrix("k5-1000.npz", [1, 0, 0, 0], 5, "k5-1000-output.npy")
+    new_calculate("output-brand-new.npy", sets[1], sets[2], list_hosts, list_viruses, h_list_ID_to_index, v_list_ID_to_index)
     # lf_svd.create_prob_matrix("tryout3.npz", [0, 1, 0, 0], "output-when-using-tryout3.npy")
     # lf_svd.create_prob_matrix("13724_attempt.npz", [0, 1, 0, 0], "results_13724_attempt.npy")
     # edge_prob_matrix = np.load("results_13724_attempt.npy", allow_pickle=True)
@@ -253,24 +251,6 @@ def main():
     edge_prob_matrix = np.load("output-when-using-tryout3.npy", allow_pickle=True)
     print(edge_prob_matrix.shape)
     print("debug")
-    
-
-    # sp_matrix = sc.load_npz("tryout3.npz").todense()
-    # print("printing sp_matrix")
-    # print(sp_matrix)
-    # alpha = [0, 1, 0, 0]
-    # #M = [[1, 0, 0, 0, 1, 0],[0, 1, 1, 0, 0, 0],[0, 0, 1, 1, 1, 1]]
-    # print("starting createA()")
-    # A = createA(sp_matrix,alpha)
-    # print("finished createA()")
-    # print("starting createK()")
-    # nA = createK(A, 1)
-    # print("\n", nA)
-    # print("finished createK(), saving now")
-    # # sc.save_npz("lf-svd-output-from-tryout3.npz", nA, compressed=False)
-    # np.save("lf-svd-output-from-tryout3.npy", nA)
-    # loaded = np.load("lf-svd-output-from-tryout3.npy")
-    # print(loaded)
 
 def validate():
     ten_auroc_values = list()
