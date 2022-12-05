@@ -3,19 +3,10 @@ import numpy as np
 
 def create_prob_matrix(input_matrix_file: str, alpha: list, k: int, output_matrix_file: str):
     sp_matrix = sc.load_npz(input_matrix_file).todense()
-    print("sc shape")
-    print(sp_matrix.shape)
-    #Load here the matrix with whatever name we provide
     A = createA(sp_matrix, alpha)
     nA = createK(A, k)
     print("\n", nA)
     np.save(output_matrix_file, nA)
-
-    # testing for successful save
-    loaded = np.load("lf-svd-output-from-tryout3.npy")
-    print(loaded)
-    return 0
-
 
 def createA(Y, alpha):
     n = Y.shape[0]
@@ -32,7 +23,6 @@ def createA(Y, alpha):
             #print(A)
         if (i % 100) == 0: print("i: %d" % i)
     return A
-
 
 def createK(A, k):
     # U, S, V = svd(A)
