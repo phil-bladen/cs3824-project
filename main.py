@@ -61,12 +61,12 @@ def parse_csv(input_file_name: str, host_to_set_of_viruses: dict, virus_to_set_o
 
 def RandomWalk(viruses_to_hosts_DAG: nx.DiGraph):
     virusHostMat = nx.to_numpy_array(viruses_to_hosts_DAG)
-    print(virusHostMat.shape)
+    #print(virusHostMat.shape)
     rowSize = len(virusHostMat)
     columnSize = rowSize 
     #columnSize = len(virusHostMat[0])
     probMatrix = np.zeros(virusHostMat.shape)
-    probArray = np.sum(virusHostMat, axis=1) #calculates degree of node i
+    probArray = np.sum(virusHostMat, axis = 0) #calculates degree of node i
     for row in range(rowSize):
         for col in range(columnSize):
             if virusHostMat[row][col] != 0:
@@ -88,9 +88,12 @@ def RandomWalk(viruses_to_hosts_DAG: nx.DiGraph):
                 rwrArray [row] [col] = -1
             else:
                 rwrArray [row] [col] = qMatrix [row] [col] + qMatrix [col] [row] 
-    rwrDict = dict(enumerate(rwrArray.flatten(), 1))
-    sortedRWR = sorted(rwrDict.items(), key = lambda val: val[1])
-    sortedDict = dict(sortedRWR)
+    #rwrDict = dict(enumerate(rwrArray.flatten(), 1))
+    
+    #sortedRWR = sorted(rwrDict.items(), key = lambda val: val[1])
+    #sortedDict = dict(sortedRWR)
+    print("done")
+    #print(sortedDict)
     #rowSizeRWR = len(rwrIndex)
     #colSizeRWR = len(rwrIndex[0])
     #for rowRWR in range(rowSizeRWR):
