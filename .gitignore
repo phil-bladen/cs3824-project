@@ -4,3 +4,4 @@ edge_sets*
 *.npy
 *.npz
 *.csv
+data_*

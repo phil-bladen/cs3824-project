@@ -72,9 +72,8 @@ def parse_csv(input_file_name: str, host_to_set_of_viruses: dict, virus_to_set_o
     # print("debug here to inspect data structures")
     return 0 # success!
 
-def create_sets(G: nx.Graph, fraction: float, viruses_list, hosts_list):
-    path_name= "edge_sets_" + str(time.time())
-    os.mkdir(path=path_name, mode=0o777)
+def create_sets(G: nx.Graph, fraction: float, viruses_list, hosts_list, path_name):
+    
     num_edges_to_remove = int(fraction * G.number_of_edges())
     training_edges = list(G.edges) # at the start, the entire graph is the "training" set
     # write training set to disk
@@ -164,10 +163,20 @@ def RandomWalk(viruses_to_hosts_DAG: nx.DiGraph):
     sortedDict = dict(sortedRWR)
 
 def main():
+    path_name= "data_" + str(time.time())
+    os.mkdir(path=path_name, mode=0o777)
+
     host_to_set_of_viruses = {}
     virus_to_set_of_hosts = {}
     viruses_to_hosts_DAG = nx.DiGraph()
     parse_csv("Virion.csv", host_to_set_of_viruses, virus_to_set_of_hosts, viruses_to_hosts_DAG)
+    
+    # # consider writing the graph to disk?
+    # nx.write_adjlist(viruses_to_hosts_DAG, "nxGraphFile")
+    # # print(viruses_to_hosts_DAG[5])
+    # test_read = nx.read_adjlist("nxGraphFile")
+    # print(test_read[5])
+
     # print("starting RandomWalk")
     # RandomWalk(viruses_to_hosts_DAG) # new
     # print("finished RandomWalk")
@@ -177,12 +186,12 @@ def main():
 
     # save these lists to disk
 
-    # h_list_fp = open("list_hosts", "ab")
-    # pickle.dump(list_hosts, h_list_fp)
-    # h_list_fp.close()
-    # v_list_fp = open("list_viruses", "ab")
-    # pickle.dump(list_viruses, v_list_fp)
-    # v_list_fp.close()
+    h_list_fp = open(path_name + "/list_hosts", "ab")
+    pickle.dump(list_hosts, h_list_fp)
+    h_list_fp.close()
+    v_list_fp = open(path_name + "/list_viruses", "ab")
+    pickle.dump(list_viruses, v_list_fp)
+    v_list_fp.close()
 
         
     h_list_ID_to_index = dict()
@@ -200,57 +209,20 @@ def main():
         v_list_ID_to_index[virus] = v_counter
         v_counter += 1
 
-    sets = create_sets(viruses_to_hosts_DAG, 0.1, list_viruses, list_hosts)
-
-    # # write the graph here, then try the lookup thing
-    # nx.write_adjlist(viruses_to_hosts_DAG, "nxGraphFile")
-    # # print(viruses_to_hosts_DAG[5])
-    # test_read = nx.read_adjlist("nxGraphFile")
-    # print(test_read[5])
+    sets = create_sets(viruses_to_hosts_DAG, 0.1, list_viruses, list_hosts, path_name)
 
     # new_calculate("output-when-using-tryout3.npy", sets[1], sets[2], list_hosts, list_viruses, h_list_ID_to_index, v_list_ID_to_index)
 
     
     # A = bipartite.biadjacency_matrix(viruses_to_hosts_DAG, list_viruses)
-    A = bipartite.biadjacency_matrix(viruses_to_hosts_DAG, list_viruses, list_hosts)
-
-
-    # testing code
-    # A_arr = A.toarray()
-    # edges_list = viruses_to_hosts_DAG.edges
-    # edges_found = 0
-    # for edge in edges_list:
-    #     virus_biadj_index = v_list_ID_to_index[edge[0]]
-    #     host_biadj_index = h_list_ID_to_index[edge[1]]
-    #     assert(A_arr[virus_biadj_index][host_biadj_index] == 1)
-    #     edges_found += 1
-    # assert(len(edges_list) == edges_found)
-    # print("tests passed! you now have a map of nodeIDs to biadj (and probably also lfsvd) elements")
-        
-
-
-
-    # A_adj = nx.adjacency_matrix(viruses_to_hosts_DAG)
-    # print("size of A_adj")
-    # print(A_adj.get_shape())
-    # m1 = sc.csr_matrix.toarray(A)
-    # sc.save_npz("tryout3", A, compressed=False)
-    # sc.save_npz("13724_attempt.npz", A_adj, compressed=False)
-    # N1 = sc.load_npz("tryout3.npz")
-    # print(N1)
-    #SciPy and Numpy error handling
+    A = bipartite.biadjacency_matrix(viruses_to_hosts_DAG, list_viruses, list_hosts)   
 
     #Load here the matrix with whatever name we provide
-    sc.save_npz("k5-1000.npz", A, compressed=False)
-    lf_svd.create_prob_matrix("k5-1000.npz", [1, 0, 0, 0], 5, "k5-1000-output.npy")
-    new_calculate("output-brand-new.npy", sets[1], sets[2], list_hosts, list_viruses, h_list_ID_to_index, v_list_ID_to_index)
-    # lf_svd.create_prob_matrix("tryout3.npz", [0, 1, 0, 0], "output-when-using-tryout3.npy")
-    # lf_svd.create_prob_matrix("13724_attempt.npz", [0, 1, 0, 0], "results_13724_attempt.npy")
-    # edge_prob_matrix = np.load("results_13724_attempt.npy", allow_pickle=True)
-    # print(edge_prob_matrix.shape)
-    edge_prob_matrix = np.load("output-when-using-tryout3.npy", allow_pickle=True)
-    print(edge_prob_matrix.shape)
-    print("debug")
+    sc.save_npz(path_name + "/biadjacency_training.npz", A, compressed=False)
+    lf_svd.create_prob_matrix(path_name + "/biadjacency_training.npz", [1, 0, 0, 0], 5, path_name + "/lfsvd_output.npy")
+
+    #new_calculate("output-brand-new.npy", sets[1], sets[2], list_hosts, list_viruses, h_list_ID_to_index, v_list_ID_to_index)
+    new_calculate(path_name + "/lfsvd_output.npy", path_name + "/positive_edges", path_name + "/negative_edges", path_name + "/list_hosts", path_name + "/list_viruses")
 
 def validate():
     ten_auroc_values = list()
@@ -275,21 +247,48 @@ def validate():
     # plot the 10 AUROC and AUPRC values
     plot_values(ten_auroc_values, ten_auprc_values)
 
-# def new_calculate(lfsvd_output_file: str, positive_testing_edges_file: str, negative_testing_edges_file: str, h_list, v_list, h_hash, v_hash):
-def new_calculate(lfsvd_output_file: str, positive_edges: list, negative_edges: list, h_list, v_list, h_hash, v_hash):
+def new_calculate(lfsvd_output_file: str, positive_testing_edges_file: str, negative_testing_edges_file: str, h_list_file, v_list_file):
+# def new_calculate(lfsvd_output_file: str, positive_edges: list, negative_edges: list, h_list, v_list, h_hash, v_hash):
     # load lfsvd output
     edge_prob_matrix = np.load(lfsvd_output_file, allow_pickle=True)
     print(edge_prob_matrix[1][4])
     
     # load positive edges output
-    # p_filepointer = open(positive_testing_edges_file, "rb")
-    # positive_edges = pickle.load(p_filepointer)
-    # p_filepointer.close()
+    p_filepointer = open(positive_testing_edges_file, "rb")
+    positive_edges = pickle.load(p_filepointer)
+    p_filepointer.close()
 
     # load negative edges output
-    # n_filepointer = open(negative_testing_edges_file, "rb")
-    # negative_edges = pickle.load(n_filepointer)
-    # n_filepointer.close()
+    n_filepointer = open(negative_testing_edges_file, "rb")
+    negative_edges = pickle.load(n_filepointer)
+    n_filepointer.close()
+
+    # load list_hosts file
+    h_list_fp = open(h_list_file, "rb")
+    list_hosts = pickle.load(h_list_fp)
+    h_list_fp.close()
+
+    # load list_viruses file
+    v_list_fp = open(v_list_file, "rb")
+    list_viruses = pickle.load(v_list_fp)
+    v_list_fp.close()
+
+
+
+    h_hash = dict()
+    v_hash = dict()
+
+    # this can go in the "calculation" code (which takes file representations of p_edges, n_edges,)
+    h_counter = 0
+    for host in list_hosts:
+        h_hash[host] = h_counter
+        h_counter += 1
+
+    # this can go in the "calculation" code    
+    v_counter = 0
+    for virus in list_viruses:
+        v_hash[virus] = v_counter
+        v_counter += 1
 
     # real auprc_calculation
     testing_set = positive_edges + negative_edges
