@@ -163,31 +163,31 @@ def RandomWalk(viruses_to_hosts_DAG: nx.DiGraph):
     sortedDict = dict(sortedRWR)
 
 def main():
-    # uncomment these two lines to create new data
+    # # uncomment these two lines to create new data
     # path_name = "data_" + str(time.time()) # new dataset
-    # create_data(path_name, 0.1, [1, 0, 0, 0], 10)
+    # create_data(path_name, 0.1, [0.5, 0.25, 0.25, 0], 100)
 
     # calculates AUPRC/AUROC and plots for data at all paths specified
     paths = [
-        "data_1670252762.1980596",
-        "data_1670252762.1980596",
-        "data_1670252762.1980596",
-        "data_1670252762.1980596",
-        "data_1670252762.1980596",
-        "data_1670252762.1980596",
-        "data_1670252762.1980596",
-        "data_1670252762.1980596",
-        "data_1670252762.1980596",
-        "data_1670252762.1980596"
+        "data_1670254947.2907295",
+        "data_1670254947.2907295",
+        "data_1670254947.2907295",
+        "data_1670254947.2907295",
+        "data_1670254947.2907295",
+        "data_1670254947.2907295",
+        "data_1670254947.2907295",
+        "data_1670254947.2907295",
+        "data_1670254947.2907295",
+        "data_1670254947.2907295"
         ]
-    calculate_all(paths)
+    validate_results(paths)
 
-def calculate_all(paths: list):
+def validate_results(paths: list):
     vectors_and_scores_list = list()
     for path_name in paths:
-        vectors_and_scores_list.append(new_calculate(path_name + "/lfsvd_output.npy", path_name + "/positive_edges", path_name + "/negative_edges", path_name + "/list_hosts", path_name + "/list_viruses"))
-    avg_ps_values = list()
-    auroc_values = list()
+        vectors_and_scores_list.append(new_calculate(path_name + "/lfsvd_output.npy", path_name + "/positive_edges", path_name + "/negative_edges", path_name + "/list_hosts", path_name + "/list_viruses")) # lfsvd
+    lfsvd_avg_ps_values = list()
+    lfsvd_auroc_values = list()
     run_counter = 0
     for tup in vectors_and_scores_list:
         predictions_vector = tup[0]
@@ -195,30 +195,31 @@ def calculate_all(paths: list):
         # #prc_display = skl_metrics.PrecisionRecallDisplay.from_predictions(predictions_vector, testing_score_list, name="PRC")
         avg_ps = skl_metrics.average_precision_score(predictions_vector, testing_score_list)
         # print("avg_ps %d: %f" % (run_counter, avg_ps))
-        avg_ps_values.append(avg_ps)
+        lfsvd_avg_ps_values.append(avg_ps)
         prc_display = skl_metrics.PrecisionRecallDisplay.from_predictions(predictions_vector, testing_score_list)
         # _ = prc_display.ax_.set_title("2-class Precision-Recall curve")
         prc_display.plot()
 
         auroc = skl_metrics.roc_auc_score(predictions_vector, testing_score_list)
         # print("auroc %d: %f" % (run_counter, auroc))
-        auroc_values.append(auroc)
+        lfsvd_auroc_values.append(auroc)
         auroc_display = skl_metrics.RocCurveDisplay.from_predictions(predictions_vector, testing_score_list)
         auroc_display.plot()
         run_counter += 1
     
-    ps_list_avg = 0
-    for val in avg_ps_values:
-        ps_list_avg += val
-    ps_list_avg = ps_list_avg / (len(avg_ps_values) * 1.0)
-    auroc_list_avg = 0
-    for val in auroc_values:
-        auroc_list_avg += val
-    auroc_list_avg = auroc_list_avg / (len(auroc_values) * 1.0)
+    lfsvd_ps_list_avg = 0
+    for val in lfsvd_avg_ps_values:
+        lfsvd_ps_list_avg += val
+    lfsvd_ps_list_avg = lfsvd_ps_list_avg / (len(lfsvd_avg_ps_values) * 1.0)
+    lfsvd_auroc_list_avg = 0
+    for val in lfsvd_auroc_values:
+        lfsvd_auroc_list_avg += val
+    lfsvd_auroc_list_avg = lfsvd_auroc_list_avg / (len(lfsvd_auroc_values) * 1.0)
 
-    print("average of all avg_ps values: %f" % ps_list_avg)
-    print("average of all auroc values: %f" % auroc_list_avg)
-    plt.show()
+    print("average of all avg_ps values: %f" % lfsvd_ps_list_avg)
+    print("average of all auroc values: %f" % lfsvd_auroc_list_avg)
+    plot_values(lfsvd_avg_ps_values, lfsvd_auroc_values)
+    #plt.show()
 
 def create_data(path_name: str, fraction: float, alpha_list: list, k: int):
     os.mkdir(path=path_name, mode=0o777)
@@ -512,13 +513,13 @@ def get_lfsvd_output(training_set: list, positive_edges_list: list, negative_edg
                 lfsvd_sample_output[i][j] = round(random.uniform(0.0, 2.0), 2)
         return lfsvd_sample_output
 
-def plot_values(auroc_values: list, auprc_values: list):
+def plot_values(auprc_values: list, auroc_values: list):
     print("graphing results")
     fig, axs = plt.subplots(1, 2)
-    axs[0].boxplot(auroc_values)
-    axs[0].set_title("AUROC Values")
-    axs[1].boxplot(auprc_values)
-    axs[1].set_title("AUPRC Values")
+    axs[0].boxplot(auprc_values)
+    axs[0].set_title("AUPRC Values")
+    axs[1].boxplot(auroc_values)
+    axs[1].set_title("AUROC Values")
     plt.show()
 
 if __name__ == "__main__":
