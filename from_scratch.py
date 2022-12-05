@@ -163,7 +163,14 @@ def RandomWalk(viruses_to_hosts_DAG: nx.DiGraph):
     sortedDict = dict(sortedRWR)
 
 def main():
-    path_name= "data_" + str(time.time())
+    # comment these two lines if you want to use previous data
+    # path_name = "data_" + str(time.time()) # new dataset
+    # create_data(path_name, 0.1, [1, 0, 0, 0], 5)
+
+    path_name = "data_1670206191.4646487" # uncomment and change this line to use previous data
+    new_calculate(path_name + "/lfsvd_output.npy", path_name + "/positive_edges", path_name + "/negative_edges", path_name + "/list_hosts", path_name + "/list_viruses")
+
+def create_data(path_name: str, fraction: float, alpha_list: list, k: int):
     os.mkdir(path=path_name, mode=0o777)
 
     host_to_set_of_viruses = {}
@@ -209,7 +216,7 @@ def main():
         v_list_ID_to_index[virus] = v_counter
         v_counter += 1
 
-    sets = create_sets(viruses_to_hosts_DAG, 0.1, list_viruses, list_hosts, path_name)
+    sets = create_sets(viruses_to_hosts_DAG, fraction, list_viruses, list_hosts, path_name)
 
     # new_calculate("output-when-using-tryout3.npy", sets[1], sets[2], list_hosts, list_viruses, h_list_ID_to_index, v_list_ID_to_index)
 
@@ -219,10 +226,9 @@ def main():
 
     #Load here the matrix with whatever name we provide
     sc.save_npz(path_name + "/biadjacency_training.npz", A, compressed=False)
-    lf_svd.create_prob_matrix(path_name + "/biadjacency_training.npz", [1, 0, 0, 0], 5, path_name + "/lfsvd_output.npy")
+    lf_svd.create_prob_matrix(path_name + "/biadjacency_training.npz", alpha_list, k, path_name + "/lfsvd_output.npy")
 
-    #new_calculate("output-brand-new.npy", sets[1], sets[2], list_hosts, list_viruses, h_list_ID_to_index, v_list_ID_to_index)
-    new_calculate(path_name + "/lfsvd_output.npy", path_name + "/positive_edges", path_name + "/negative_edges", path_name + "/list_hosts", path_name + "/list_viruses")
+    # new_calculate(path_name + "/lfsvd_output.npy", path_name + "/positive_edges", path_name + "/negative_edges", path_name + "/list_hosts", path_name + "/list_viruses")
 
 def validate():
     ten_auroc_values = list()
@@ -357,6 +363,8 @@ def new_calculate(lfsvd_output_file: str, positive_testing_edges_file: str, nega
     print("auroc: %f" % auroc)
     auroc_display = skl_metrics.RocCurveDisplay.from_predictions(predictions_vector, testing_score_list)
     auroc_display.plot()
+
+    plt.show()
 
     
     # roc_display = RocCurveDisplay.from_predictions()
