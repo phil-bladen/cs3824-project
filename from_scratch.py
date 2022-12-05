@@ -163,12 +163,62 @@ def RandomWalk(viruses_to_hosts_DAG: nx.DiGraph):
     sortedDict = dict(sortedRWR)
 
 def main():
-    # comment these two lines if you want to use previous data
+    # uncomment these two lines to create new data
     # path_name = "data_" + str(time.time()) # new dataset
-    # create_data(path_name, 0.1, [1, 0, 0, 0], 5)
+    # create_data(path_name, 0.1, [1, 0, 0, 0], 10)
 
-    path_name = "data_1670206191.4646487" # uncomment and change this line to use previous data
-    new_calculate(path_name + "/lfsvd_output.npy", path_name + "/positive_edges", path_name + "/negative_edges", path_name + "/list_hosts", path_name + "/list_viruses")
+    # calculates AUPRC/AUROC and plots for data at all paths specified
+    paths = [
+        "data_1670252762.1980596",
+        "data_1670252762.1980596",
+        "data_1670252762.1980596",
+        "data_1670252762.1980596",
+        "data_1670252762.1980596",
+        "data_1670252762.1980596",
+        "data_1670252762.1980596",
+        "data_1670252762.1980596",
+        "data_1670252762.1980596",
+        "data_1670252762.1980596"
+        ]
+    calculate_all(paths)
+
+def calculate_all(paths: list):
+    vectors_and_scores_list = list()
+    for path_name in paths:
+        vectors_and_scores_list.append(new_calculate(path_name + "/lfsvd_output.npy", path_name + "/positive_edges", path_name + "/negative_edges", path_name + "/list_hosts", path_name + "/list_viruses"))
+    avg_ps_values = list()
+    auroc_values = list()
+    run_counter = 0
+    for tup in vectors_and_scores_list:
+        predictions_vector = tup[0]
+        testing_score_list = tup[1]
+        # #prc_display = skl_metrics.PrecisionRecallDisplay.from_predictions(predictions_vector, testing_score_list, name="PRC")
+        avg_ps = skl_metrics.average_precision_score(predictions_vector, testing_score_list)
+        # print("avg_ps %d: %f" % (run_counter, avg_ps))
+        avg_ps_values.append(avg_ps)
+        prc_display = skl_metrics.PrecisionRecallDisplay.from_predictions(predictions_vector, testing_score_list)
+        # _ = prc_display.ax_.set_title("2-class Precision-Recall curve")
+        prc_display.plot()
+
+        auroc = skl_metrics.roc_auc_score(predictions_vector, testing_score_list)
+        # print("auroc %d: %f" % (run_counter, auroc))
+        auroc_values.append(auroc)
+        auroc_display = skl_metrics.RocCurveDisplay.from_predictions(predictions_vector, testing_score_list)
+        auroc_display.plot()
+        run_counter += 1
+    
+    ps_list_avg = 0
+    for val in avg_ps_values:
+        ps_list_avg += val
+    ps_list_avg = ps_list_avg / (len(avg_ps_values) * 1.0)
+    auroc_list_avg = 0
+    for val in auroc_values:
+        auroc_list_avg += val
+    auroc_list_avg = auroc_list_avg / (len(auroc_values) * 1.0)
+
+    print("average of all avg_ps values: %f" % ps_list_avg)
+    print("average of all auroc values: %f" % auroc_list_avg)
+    plt.show()
 
 def create_data(path_name: str, fraction: float, alpha_list: list, k: int):
     os.mkdir(path=path_name, mode=0o777)
@@ -257,7 +307,7 @@ def new_calculate(lfsvd_output_file: str, positive_testing_edges_file: str, nega
 # def new_calculate(lfsvd_output_file: str, positive_edges: list, negative_edges: list, h_list, v_list, h_hash, v_hash):
     # load lfsvd output
     edge_prob_matrix = np.load(lfsvd_output_file, allow_pickle=True)
-    print(edge_prob_matrix[1][4])
+    # print(edge_prob_matrix[1][4])
     
     # load positive edges output
     p_filepointer = open(positive_testing_edges_file, "rb")
@@ -352,19 +402,19 @@ def new_calculate(lfsvd_output_file: str, positive_testing_edges_file: str, nega
         testing_score_list.append(edge_prob_matrix[virus_index][host_index])
         prc_counter += 1
 
-    #prc_display = skl_metrics.PrecisionRecallDisplay.from_predictions(predictions_vector, testing_score_list, name="PRC")
-    avg_ps = skl_metrics.average_precision_score(predictions_vector, testing_score_list)
-    print("avg_ps: %f" % avg_ps)
-    prc_display = skl_metrics.PrecisionRecallDisplay.from_predictions(predictions_vector, testing_score_list)
-    # _ = prc_display.ax_.set_title("2-class Precision-Recall curve")
-    prc_display.plot()
+    # #prc_display = skl_metrics.PrecisionRecallDisplay.from_predictions(predictions_vector, testing_score_list, name="PRC")
+    # avg_ps = skl_metrics.average_precision_score(predictions_vector, testing_score_list)
+    # print("avg_ps: %f" % avg_ps)
+    # prc_display = skl_metrics.PrecisionRecallDisplay.from_predictions(predictions_vector, testing_score_list)
+    # # _ = prc_display.ax_.set_title("2-class Precision-Recall curve")
+    # prc_display.plot()
 
-    auroc = skl_metrics.roc_auc_score(predictions_vector, testing_score_list)
-    print("auroc: %f" % auroc)
-    auroc_display = skl_metrics.RocCurveDisplay.from_predictions(predictions_vector, testing_score_list)
-    auroc_display.plot()
+    # auroc = skl_metrics.roc_auc_score(predictions_vector, testing_score_list)
+    # print("auroc: %f" % auroc)
+    # auroc_display = skl_metrics.RocCurveDisplay.from_predictions(predictions_vector, testing_score_list)
+    # auroc_display.plot()
 
-    plt.show()
+    # plt.show()
 
     
     # roc_display = RocCurveDisplay.from_predictions()
@@ -374,7 +424,7 @@ def new_calculate(lfsvd_output_file: str, positive_testing_edges_file: str, nega
     # plt.plot(precision_at_each_edge, recall_at_each_edge)
     #plt.show()
 
-    return (avg_ps, auroc)
+    return (predictions_vector, testing_score_list)
 
 
 def calculate_auroc_and_auprc(lfsvd_output_matrix, positive_testing_edges: list, negative_testing_edges: list):
