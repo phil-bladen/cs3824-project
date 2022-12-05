@@ -1,13 +1,13 @@
 import scipy.sparse as sc
 import numpy as np
 
-def create_prob_matrix(input_matrix_file: str, alpha: list, output_matrix_file: str):
+def create_prob_matrix(input_matrix_file: str, alpha: list, k: int, output_matrix_file: str):
     sp_matrix = sc.load_npz(input_matrix_file).todense()
     print("sc shape")
     print(sp_matrix.shape)
     #Load here the matrix with whatever name we provide
     A = createA(sp_matrix, alpha)
-    nA = createK(A, 1)
+    nA = createK(A, k)
     print("\n", nA)
     np.save(output_matrix_file, nA)
 
