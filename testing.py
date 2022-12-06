@@ -26,15 +26,14 @@ class interaction:
 
 def main():
     # # uncomment these two lines to create new data
-    path_name = "data_" + str(time.time()) # new dataset
-    create_data(path_name, 0.1, [0.5, 0.25, 0.25, 0], 100) # creates RWR output and LFSVD output using parameters specified
+    # path_name = "data_" + str(time.time()) # new dataset
+    # create_data(path_name, 0.1, [0.5, 0.25, 0.25, 0], 100) # creates RWR output and LFSVD output using parameters specified
 
     # uncomment the lines below to test existing data. calculates AUPRC/AUROC and plots for data at all paths specified
-    # paths = [
-    #     "data_1670267344.222717",
-    #     "data_1670267344.222717"
-    #     ]
-    # validate_results(paths)
+    paths = [
+        "data_1670293745.2351265"
+        ]
+    validate_results(paths)
 
 def parse_csv(input_file_name: str, host_to_set_of_viruses: dict, virus_to_set_of_hosts: dict, viruses_to_hosts_DAG: nx.DiGraph):
     file = open(input_file_name, 'r')
@@ -155,9 +154,16 @@ def RandomWalk(path_name: str):
     columnSize = rowSize 
     #columnSize = len(virusHostMat[0])
     probMatrix = np.zeros(virusHostMat.shape)
-    probArray = np.sum(virusHostMat, axis=0) #calculates degree of node i
+    	    #probArray = np.sum(virusHostMat, axis = 0) #calculates degree of node i	
+    probArray = np.zeros(rowSize)	
+    for rowSum in range(rowSize):
+        if rowSum % 100 == 0: print("RWR first loop row %d of %d" % (rowSum, rowSize))
+        sum = 0	
+        for colSum in range(columnSize):	
+            sum = sum + virusHostMat[rowSum][colSum]	
+        probArray [rowSum] = sum
     for row in range(rowSize):
-        if row % 100 == 0: print("RWR first loop row %d of %d" % (row, rowSize))
+        if row % 100 == 0: print("RWR second loop row %d of %d" % (row, rowSize))
         for col in range(columnSize):
             if virusHostMat[row][col] != 0:
                 probMatrix[row][col] = 1 / probArray[row]
@@ -173,25 +179,27 @@ def RandomWalk(path_name: str):
     #rwrIndex = qMatrix + qMatrix.transpose()
     rwrArray = np.zeros(virusHostMat.shape)
     for row in range(rowSize):
-        if row % 100 == 0: print("RWR second loop row %d of %d" % (row, rowSize))
+        if row % 100 == 0: print("RWR third loop row %d of %d" % (row, rowSize))
         for col in range(columnSize):
             if row == col:
-                rwrArray [row] [col] = -1
+                #rwrArray [row] [col] = -1
+                rwrArray [row] [col] = 0
             else:
                 rwrArray [row] [col] = qMatrix [row] [col] + qMatrix [col] [row]
     np.save(path_name + "/rwr_output.npy", rwrArray)
     # rwrDict = dict(enumerate(rwrArray.flatten(), 1))
     # sortedRWR = sorted(rwrDict.items(), key = lambda val: val[1])
     # sortedDict = dict(sortedRWR)
+    
 
 def validate_results(paths: list):    
-    rwr_vectors_and_scores_list = list()
+    lfsvd_vectors_and_scores_list = list()
     for path_name in paths:
-        rwr_vectors_and_scores_list.append(new_calculate(path_name + "/lfsvd_output.npy", path_name + "/positive_edges", path_name + "/negative_edges", path_name + "/list_hosts", path_name + "/list_viruses")) # lfsvd
+        lfsvd_vectors_and_scores_list.append(new_calculate(path_name + "/lfsvd_output.npy", path_name + "/positive_edges", path_name + "/negative_edges", path_name + "/list_hosts", path_name + "/list_viruses")) # lfsvd
     lfsvd_avg_ps_values = list()
     lfsvd_auroc_values = list()
     run_counter = 0
-    for tup in rwr_vectors_and_scores_list:
+    for tup in lfsvd_vectors_and_scores_list:
         predictions_vector = tup[0]
         testing_score_list = tup[1]
         # #prc_display = skl_metrics.PrecisionRecallDisplay.from_predictions(predictions_vector, testing_score_list, name="PRC")
