@@ -25,13 +25,19 @@ class interaction:
         self.virusclass = ""
 
 def main():
-    # # uncomment these two lines to create new data
-    # path_name = "data_" + str(time.time()) # new dataset
-    # create_data(path_name, 0.1, [0.5, 0.25, 0.25, 0], 100) # creates RWR output and LFSVD output using parameters specified
+    # # uncomment these lines to create new data
+    fraction = 0.1
+    alpha = [0.5, 0.25, 0.25, 0]
+    k = 100
+    alpha_string = str()
+    for val in alpha: alpha_string = alpha_string + str(val) + "-"
+
+    path_name = "data_" + str(time.time()) + "-" + str(fraction) + "-" + alpha_string + str(k)  # new dataset
+    create_data(path_name, fraction, alpha, k) # creates RWR output and LFSVD output using parameters specified
 
     # uncomment the lines below to test existing data. calculates AUPRC/AUROC and plots for data at all paths specified
     paths = [
-        "data_1670293745.2351265"
+        path_name
         ]
     validate_results(paths)
 
@@ -148,6 +154,7 @@ def RandomWalk(path_name: str):
     # virusHostMat = pickle.load(adj_fp)
     # adj_fp.close()
     virusHostMat = np.load(path_name + "/adjacency_training.npy")
+    tf_vhm = (virusHostMat == virusHostMat.T).all()
 
     print(virusHostMat.shape)
     rowSize = len(virusHostMat)
@@ -175,7 +182,16 @@ def RandomWalk(path_name: str):
     #print(len(cProbTransMatrix[0]))
     diffMatrix = np.array(idenMatrix - cProbTransMatrix)
     invMatrix = np.linalg.inv(diffMatrix)
-    qMatrix = cPrime * invMatrix
+    
+    qMatrix = cPrime * invMatrix # not multiplying by e_x (check paper eq 21)
+    # column_sums = list()    
+    # for column in invMatrix:
+    #     col_sum = 0
+    #     for row in invMatrix[col][row]:
+    #         col_sum += invMatrix[col][row]
+    #     column_sums.append(col_sum)
+    sum_1 = np.sum(qMatrix, axis=0)
+    sum_2 = qMatrix.sum(axis=0)
     #rwrIndex = qMatrix + qMatrix.transpose()
     rwrArray = np.zeros(virusHostMat.shape)
     for row in range(rowSize):
@@ -186,6 +202,11 @@ def RandomWalk(path_name: str):
                 rwrArray [row] [col] = 0
             else:
                 rwrArray [row] [col] = qMatrix [row] [col] + qMatrix [col] [row]
+    # prob_sum = 0
+    # for row in range (rowSize):
+    #     for col in range(columnSize):
+
+
     np.save(path_name + "/rwr_output.npy", rwrArray)
     # rwrDict = dict(enumerate(rwrArray.flatten(), 1))
     # sortedRWR = sorted(rwrDict.items(), key = lambda val: val[1])
@@ -314,7 +335,18 @@ def create_data(path_name: str, fraction: float, alpha_list: list, k: int):
     # new_calculate("output-when-using-tryout3.npy", sets[1], sets[2], list_hosts, list_viruses, h_list_ID_to_index, v_list_ID_to_index)
 
     adj_training_matrix = nx.to_numpy_array(viruses_to_hosts_DAG)
+    # is this symmetric?
+    undir = viruses_to_hosts_DAG.to_undirected()
+    undir_matrix = nx.to_numpy_array(undir)
+    adj_training_matrix = undir_matrix
+
+    tf_undir = (undir_matrix == undir_matrix.T).all()
+
+    tf = (adj_training_matrix == adj_training_matrix.T).all()
+
     np.save(path_name + "/adjacency_training.npy", adj_training_matrix)
+    
+    # np.save(path_name + "/adjacency_training.npy", adj_training_matrix)
     #adj_m_fp = open(path_name + "/adjacency_training.npy")
 
     
