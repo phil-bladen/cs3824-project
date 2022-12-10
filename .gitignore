@@ -5,3 +5,4 @@ edge_sets*
 *.npz
 *.csv
 data_*
+new_data*

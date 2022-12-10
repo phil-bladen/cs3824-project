@@ -25,20 +25,32 @@ class interaction:
         self.virusclass = ""
 
 def main():
-    # # uncomment these lines to create new data
     fraction = 0.1
+    t = 0.1 # teleportation chance
     alpha = [0.5, 0.25, 0.25, 0]
     k = 100
     alpha_string = str()
     for val in alpha: alpha_string = alpha_string + str(val) + "-"
 
+    # path_name = "new_data" + str(time.time()) + "-f-" + str(fraction) + "-t-" + str(t) + "-a-" + alpha_string + "-k-" + str(k)  # testing everything as a Graph() now
     path_name = "data_" + str(time.time()) + "-" + str(fraction) + "-" + alpha_string + str(k)  # new dataset
-    create_data(path_name, fraction, alpha, k) # creates RWR output and LFSVD output using parameters specified
+    create_data(path_name, fraction, t, alpha, k) # uncomment this line to create new data
 
     # uncomment the lines below to test existing data. calculates AUPRC/AUROC and plots for data at all paths specified
-    paths = [
-        path_name
-        ]
+    # paths = [
+    #     "data_1670349328.122572-0.1-0.5-0.25-0.25-0-100",
+    #     "data_1670348554.3385873-0.1-0.5-0.25-0.25-0-100",
+    #     "data_1670350468.9466429-0.1-0.5-0.25-0.25-0-100",
+    #     "data_1670351287.7577162-0.1-0.5-0.25-0.25-0-100",
+    #     "data_1670352057.195959-0.1-0.5-0.25-0.25-0-100",
+    #     "data_1670352848.6982768-0.1-0.5-0.25-0.25-0-100",
+    #     "data_1670353650.467783-0.1-0.5-0.25-0.25-0-100",
+    #     "data_1670354430.1333382-0.1-0.5-0.25-0.25-0-100",
+    #     "data_1670355233.8895473-0.1-0.5-0.25-0.25-0-100",
+    #     "data_1670361197.7015493-0.1-0.5-0.25-0.25-0-100"
+    #     ]
+    
+    paths = [path_name] # uncomment this line to graph and calculate results for the dataset just created
     validate_results(paths)
 
 def parse_csv(input_file_name: str, host_to_set_of_viruses: dict, virus_to_set_of_hosts: dict, viruses_to_hosts_DAG: nx.DiGraph):
@@ -148,7 +160,7 @@ def create_sets(G: nx.Graph, fraction: float, viruses_list, hosts_list, path_nam
 
 # def RandomWalk(viruses_to_hosts_DAG: nx.DiGraph):
 #def RandomWalk(adj_mat_file: str):
-def RandomWalk(path_name: str):
+def RandomWalk(path_name: str, teleportation_chance: float):
     # virusHostMat = nx.to_numpy_array(viruses_to_hosts_DAG)
     # adj_fp = open(adj_mat_file, "rb")    
     # virusHostMat = pickle.load(adj_fp)
@@ -174,8 +186,8 @@ def RandomWalk(path_name: str):
         for col in range(columnSize):
             if virusHostMat[row][col] != 0:
                 probMatrix[row][col] = 1 / probArray[row]
-    c = 0.9
-    cPrime = 0.1
+    c = 1 - teleportation_chance
+    cPrime = teleportation_chance
     cProbTransMatrix = np.array(c * probMatrix.transpose())
     idenMatrix = np.identity(rowSize)
     #print (len(cProbTransMatrix))
@@ -247,8 +259,8 @@ def validate_results(paths: list):
         lfsvd_auroc_list_avg += val
     lfsvd_auroc_list_avg = lfsvd_auroc_list_avg / (len(lfsvd_auroc_values) * 1.0)
 
-    print("average of all LFSVD avg_ps values: %f" % lfsvd_ps_list_avg)
-    print("average of all LFSVD auroc values: %f" % lfsvd_auroc_list_avg)
+    print("average of all %d LFSVD AUPRC values: %f" % (len(lfsvd_avg_ps_values),lfsvd_ps_list_avg))
+    print("average of all %d LFSVD AUROC values: %f" % (len(lfsvd_auroc_values),lfsvd_auroc_list_avg))
     plot_values(lfsvd_avg_ps_values, lfsvd_auroc_values)
 
     rwr_vectors_and_scores_list = list()
@@ -284,16 +296,17 @@ def validate_results(paths: list):
         rwr_auroc_list_avg += val
     rwr_auroc_list_avg = rwr_auroc_list_avg / (len(rwr_auroc_values) * 1.0)
 
-    print("average of all rwr avg_ps values: %f" % rwr_ps_list_avg)
-    print("average of all rwr auroc values: %f" % rwr_auroc_list_avg)
+    print("average of all %d RWR AUPRC values: %f" % (len(rwr_avg_ps_values), rwr_ps_list_avg))
+    print("average of all %d RWR AUROC values: %f" % (len(rwr_avg_ps_values), rwr_auroc_list_avg))
     plot_values(rwr_avg_ps_values, rwr_auroc_values)
 
-def create_data(path_name: str, fraction: float, alpha_list: list, k: int):
+def create_data(path_name: str, fraction: float, teleportation_chance, alpha_list: list, k: int):
     os.mkdir(path=path_name, mode=0o777)
 
     host_to_set_of_viruses = {}
     virus_to_set_of_hosts = {}
-    viruses_to_hosts_DAG = nx.DiGraph()
+    # viruses_to_hosts_DAG = nx.DiGraph()
+    viruses_to_hosts_DAG = nx.Graph()
     parse_csv("Virion.csv", host_to_set_of_viruses, virus_to_set_of_hosts, viruses_to_hosts_DAG)
     
     # # consider writing the graph to disk?
@@ -351,7 +364,7 @@ def create_data(path_name: str, fraction: float, alpha_list: list, k: int):
 
     
     print("starting RandomWalk")
-    RandomWalk(path_name) # new
+    RandomWalk(path_name, teleportation_chance) # new
     print("finished RandomWalk")
 
     
@@ -391,7 +404,10 @@ def new_calculate(output_file: str, positive_testing_edges_file: str, negative_t
 # def new_calculate(lfsvd_output_file: str, positive_edges: list, negative_edges: list, h_list, v_list, h_hash, v_hash):
     # load lfsvd output
     edge_prob_matrix = np.load(output_file, allow_pickle=True)
-    # print(edge_prob_matrix[1][4])
+    # print(edge_prob_matrix[1][4]) 
+
+    #tf_epm = (edge_prob_matrix == edge_prob_matrix.T).all()
+    tf_epm = np.array_equal(edge_prob_matrix, edge_prob_matrix.T)
     
     # load positive edges output
     p_filepointer = open(positive_testing_edges_file, "rb")
@@ -438,9 +454,17 @@ def new_calculate(output_file: str, positive_testing_edges_file: str, negative_t
     for edge in testing_set:
         # u = int(edge[0])
         # v = int(edge[1])
-        u = v_hash[edge[0]]
-        v = h_hash[edge[1]]
-        edge_score = edge_prob_matrix[u][v]
+        try:
+            u = v_hash[edge[0]]
+            v = h_hash[edge[1]]
+        except KeyError:
+            u = h_hash[edge[0]]
+            v = v_hash[edge[1]]
+        try:
+            edge_score = edge_prob_matrix[u][v]
+        except:
+            edge_score = edge_prob_matrix[v][u]
+        # edge_score = edge_prob_matrix[u][v] + edge_prob_matrix[v][u]
         #edge_lfsvd_score = sc.csr_matrix.__getitem__ edge_prob_matrix[u][v]
         # create a tuple with the edge and its score. add this tuple to the list
         testing_edges_plus_scores.append((edge, edge_score))
@@ -480,8 +504,12 @@ def new_calculate(output_file: str, positive_testing_edges_file: str, negative_t
         # precision_at_each_edge.append(precision_at_current_edge)
         # recall_at_current_edge = true_positives / (true_positives + false_positives * 1.0) # 1.0 used for float conversion
         # recall_at_each_edge.append(recall_at_current_edge)
-        virus_index = v_hash[edge[0]]
-        host_index = h_hash[edge[1]]
+        try:
+            virus_index = v_hash[edge[0]]
+            host_index = h_hash[edge[1]]
+        except:
+            virus_index = v_hash[edge[1]]
+            host_index = h_hash[edge[0]]
         #testing_score_list.append(edge_prob_matrix[int(edge[0])][int(edge[1])])
         testing_score_list.append(edge_prob_matrix[virus_index][host_index])
         prc_counter += 1
